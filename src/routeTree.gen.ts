@@ -15,16 +15,27 @@ import { Route as FlowStatesRouteImport } from './routes/flow-states'
 import { Route as ConnectionsRouteImport } from './routes/connections'
 import { Route as ComponentsRouteImport } from './routes/components'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as V4IndexRouteImport } from './routes/v4.index'
 import { Route as V3IndexRouteImport } from './routes/v3.index'
+import { Route as V4FlowStatesRouteImport } from './routes/v4.flow-states'
+import { Route as V4ComponentsRouteImport } from './routes/v4.components'
 import { Route as V3FlowStatesRouteImport } from './routes/v3.flow-states'
 import { Route as V3ComponentsRouteImport } from './routes/v3.components'
 import { Route as ToolsToolIdRouteImport } from './routes/tools.$toolId'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
 import { Route as ConnectionsTypeIdRouteImport } from './routes/connections.$typeId'
+import { Route as V4ProjectsIndexRouteImport } from './routes/v4.projects.index'
+import { Route as V4ProductsIndexRouteImport } from './routes/v4.products.index'
+import { Route as V4LibraryIndexRouteImport } from './routes/v4.library.index'
+import { Route as V4ConnectionsIndexRouteImport } from './routes/v4.connections.index'
 import { Route as V3ProjectsIndexRouteImport } from './routes/v3.projects.index'
 import { Route as V3ProductsIndexRouteImport } from './routes/v3.products.index'
 import { Route as V3LibraryIndexRouteImport } from './routes/v3.library.index'
 import { Route as V3ConnectionsIndexRouteImport } from './routes/v3.connections.index'
+import { Route as V4ProjectsNewRouteImport } from './routes/v4.projects.new'
+import { Route as V4ProjectsProjectIdRouteImport } from './routes/v4.projects.$projectId'
+import { Route as V4ProductsProductIdRouteImport } from './routes/v4.products.$productId'
+import { Route as V4ConnectionsTypeIdRouteImport } from './routes/v4.connections.$typeId'
 import { Route as V3ProjectsNewRouteImport } from './routes/v3.projects.new'
 import { Route as V3ProjectsProjectIdRouteImport } from './routes/v3.projects.$projectId'
 import { Route as V3ProductsProductIdRouteImport } from './routes/v3.products.$productId'
@@ -38,6 +49,7 @@ import { Route as ToolsToolIdProcessingRouteImport } from './routes/tools.$toolI
 import { Route as ToolsToolIdDegradedRouteImport } from './routes/tools.$toolId.degraded'
 import { Route as ToolsToolIdBlockedRouteImport } from './routes/tools.$toolId.blocked'
 import { Route as ToolsToolIdAboutRouteImport } from './routes/tools.$toolId.about'
+import { Route as V4RunProductIdStepRouteImport } from './routes/v4.run.$productId.$step'
 import { Route as V3ToolsProductIdSourceRouteImport } from './routes/v3.tools.$productId.source'
 import { Route as V3ToolsProductIdReviewRouteImport } from './routes/v3.tools.$productId.review'
 import { Route as V3ToolsProductIdResultRouteImport } from './routes/v3.tools.$productId.result'
@@ -73,9 +85,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V4IndexRoute = V4IndexRouteImport.update({
+  id: '/v4/',
+  path: '/v4/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const V3IndexRoute = V3IndexRouteImport.update({
   id: '/v3/',
   path: '/v3/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V4FlowStatesRoute = V4FlowStatesRouteImport.update({
+  id: '/v4/flow-states',
+  path: '/v4/flow-states',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V4ComponentsRoute = V4ComponentsRouteImport.update({
+  id: '/v4/components',
+  path: '/v4/components',
   getParentRoute: () => rootRouteImport,
 } as any)
 const V3FlowStatesRoute = V3FlowStatesRouteImport.update({
@@ -103,6 +130,26 @@ const ConnectionsTypeIdRoute = ConnectionsTypeIdRouteImport.update({
   path: '/$typeId',
   getParentRoute: () => ConnectionsRoute,
 } as any)
+const V4ProjectsIndexRoute = V4ProjectsIndexRouteImport.update({
+  id: '/v4/projects/',
+  path: '/v4/projects/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V4ProductsIndexRoute = V4ProductsIndexRouteImport.update({
+  id: '/v4/products/',
+  path: '/v4/products/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V4LibraryIndexRoute = V4LibraryIndexRouteImport.update({
+  id: '/v4/library/',
+  path: '/v4/library/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V4ConnectionsIndexRoute = V4ConnectionsIndexRouteImport.update({
+  id: '/v4/connections/',
+  path: '/v4/connections/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const V3ProjectsIndexRoute = V3ProjectsIndexRouteImport.update({
   id: '/v3/projects/',
   path: '/v3/projects/',
@@ -121,6 +168,26 @@ const V3LibraryIndexRoute = V3LibraryIndexRouteImport.update({
 const V3ConnectionsIndexRoute = V3ConnectionsIndexRouteImport.update({
   id: '/v3/connections/',
   path: '/v3/connections/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V4ProjectsNewRoute = V4ProjectsNewRouteImport.update({
+  id: '/v4/projects/new',
+  path: '/v4/projects/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V4ProjectsProjectIdRoute = V4ProjectsProjectIdRouteImport.update({
+  id: '/v4/projects/$projectId',
+  path: '/v4/projects/$projectId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V4ProductsProductIdRoute = V4ProductsProductIdRouteImport.update({
+  id: '/v4/products/$productId',
+  path: '/v4/products/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V4ConnectionsTypeIdRoute = V4ConnectionsTypeIdRouteImport.update({
+  id: '/v4/connections/$typeId',
+  path: '/v4/connections/$typeId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const V3ProjectsNewRoute = V3ProjectsNewRouteImport.update({
@@ -188,6 +255,11 @@ const ToolsToolIdAboutRoute = ToolsToolIdAboutRouteImport.update({
   path: '/about',
   getParentRoute: () => ToolsToolIdRoute,
 } as any)
+const V4RunProductIdStepRoute = V4RunProductIdStepRouteImport.update({
+  id: '/v4/run/$productId/$step',
+  path: '/v4/run/$productId/$step',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const V3ToolsProductIdSourceRoute = V3ToolsProductIdSourceRouteImport.update({
   id: '/v3/tools/$productId/source',
   path: '/v3/tools/$productId/source',
@@ -222,7 +294,10 @@ export interface FileRoutesByFullPath {
   '/tools/$toolId': typeof ToolsToolIdRouteWithChildren
   '/v3/components': typeof V3ComponentsRoute
   '/v3/flow-states': typeof V3FlowStatesRoute
+  '/v4/components': typeof V4ComponentsRoute
+  '/v4/flow-states': typeof V4FlowStatesRoute
   '/v3/': typeof V3IndexRoute
+  '/v4/': typeof V4IndexRoute
   '/tools/$toolId/about': typeof ToolsToolIdAboutRoute
   '/tools/$toolId/blocked': typeof ToolsToolIdBlockedRoute
   '/tools/$toolId/degraded': typeof ToolsToolIdDegradedRoute
@@ -236,14 +311,23 @@ export interface FileRoutesByFullPath {
   '/v3/products/$productId': typeof V3ProductsProductIdRoute
   '/v3/projects/$projectId': typeof V3ProjectsProjectIdRoute
   '/v3/projects/new': typeof V3ProjectsNewRoute
+  '/v4/connections/$typeId': typeof V4ConnectionsTypeIdRoute
+  '/v4/products/$productId': typeof V4ProductsProductIdRoute
+  '/v4/projects/$projectId': typeof V4ProjectsProjectIdRoute
+  '/v4/projects/new': typeof V4ProjectsNewRoute
   '/v3/connections/': typeof V3ConnectionsIndexRoute
   '/v3/library/': typeof V3LibraryIndexRoute
   '/v3/products/': typeof V3ProductsIndexRoute
   '/v3/projects/': typeof V3ProjectsIndexRoute
+  '/v4/connections/': typeof V4ConnectionsIndexRoute
+  '/v4/library/': typeof V4LibraryIndexRoute
+  '/v4/products/': typeof V4ProductsIndexRoute
+  '/v4/projects/': typeof V4ProjectsIndexRoute
   '/v3/tools/$productId/processing': typeof V3ToolsProductIdProcessingRoute
   '/v3/tools/$productId/result': typeof V3ToolsProductIdResultRoute
   '/v3/tools/$productId/review': typeof V3ToolsProductIdReviewRoute
   '/v3/tools/$productId/source': typeof V3ToolsProductIdSourceRoute
+  '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -257,7 +341,10 @@ export interface FileRoutesByTo {
   '/tools/$toolId': typeof ToolsToolIdRouteWithChildren
   '/v3/components': typeof V3ComponentsRoute
   '/v3/flow-states': typeof V3FlowStatesRoute
+  '/v4/components': typeof V4ComponentsRoute
+  '/v4/flow-states': typeof V4FlowStatesRoute
   '/v3': typeof V3IndexRoute
+  '/v4': typeof V4IndexRoute
   '/tools/$toolId/about': typeof ToolsToolIdAboutRoute
   '/tools/$toolId/blocked': typeof ToolsToolIdBlockedRoute
   '/tools/$toolId/degraded': typeof ToolsToolIdDegradedRoute
@@ -271,14 +358,23 @@ export interface FileRoutesByTo {
   '/v3/products/$productId': typeof V3ProductsProductIdRoute
   '/v3/projects/$projectId': typeof V3ProjectsProjectIdRoute
   '/v3/projects/new': typeof V3ProjectsNewRoute
+  '/v4/connections/$typeId': typeof V4ConnectionsTypeIdRoute
+  '/v4/products/$productId': typeof V4ProductsProductIdRoute
+  '/v4/projects/$projectId': typeof V4ProjectsProjectIdRoute
+  '/v4/projects/new': typeof V4ProjectsNewRoute
   '/v3/connections': typeof V3ConnectionsIndexRoute
   '/v3/library': typeof V3LibraryIndexRoute
   '/v3/products': typeof V3ProductsIndexRoute
   '/v3/projects': typeof V3ProjectsIndexRoute
+  '/v4/connections': typeof V4ConnectionsIndexRoute
+  '/v4/library': typeof V4LibraryIndexRoute
+  '/v4/products': typeof V4ProductsIndexRoute
+  '/v4/projects': typeof V4ProjectsIndexRoute
   '/v3/tools/$productId/processing': typeof V3ToolsProductIdProcessingRoute
   '/v3/tools/$productId/result': typeof V3ToolsProductIdResultRoute
   '/v3/tools/$productId/review': typeof V3ToolsProductIdReviewRoute
   '/v3/tools/$productId/source': typeof V3ToolsProductIdSourceRoute
+  '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -293,7 +389,10 @@ export interface FileRoutesById {
   '/tools/$toolId': typeof ToolsToolIdRouteWithChildren
   '/v3/components': typeof V3ComponentsRoute
   '/v3/flow-states': typeof V3FlowStatesRoute
+  '/v4/components': typeof V4ComponentsRoute
+  '/v4/flow-states': typeof V4FlowStatesRoute
   '/v3/': typeof V3IndexRoute
+  '/v4/': typeof V4IndexRoute
   '/tools/$toolId/about': typeof ToolsToolIdAboutRoute
   '/tools/$toolId/blocked': typeof ToolsToolIdBlockedRoute
   '/tools/$toolId/degraded': typeof ToolsToolIdDegradedRoute
@@ -307,14 +406,23 @@ export interface FileRoutesById {
   '/v3/products/$productId': typeof V3ProductsProductIdRoute
   '/v3/projects/$projectId': typeof V3ProjectsProjectIdRoute
   '/v3/projects/new': typeof V3ProjectsNewRoute
+  '/v4/connections/$typeId': typeof V4ConnectionsTypeIdRoute
+  '/v4/products/$productId': typeof V4ProductsProductIdRoute
+  '/v4/projects/$projectId': typeof V4ProjectsProjectIdRoute
+  '/v4/projects/new': typeof V4ProjectsNewRoute
   '/v3/connections/': typeof V3ConnectionsIndexRoute
   '/v3/library/': typeof V3LibraryIndexRoute
   '/v3/products/': typeof V3ProductsIndexRoute
   '/v3/projects/': typeof V3ProjectsIndexRoute
+  '/v4/connections/': typeof V4ConnectionsIndexRoute
+  '/v4/library/': typeof V4LibraryIndexRoute
+  '/v4/products/': typeof V4ProductsIndexRoute
+  '/v4/projects/': typeof V4ProjectsIndexRoute
   '/v3/tools/$productId/processing': typeof V3ToolsProductIdProcessingRoute
   '/v3/tools/$productId/result': typeof V3ToolsProductIdResultRoute
   '/v3/tools/$productId/review': typeof V3ToolsProductIdReviewRoute
   '/v3/tools/$productId/source': typeof V3ToolsProductIdSourceRoute
+  '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -330,7 +438,10 @@ export interface FileRouteTypes {
     | '/tools/$toolId'
     | '/v3/components'
     | '/v3/flow-states'
+    | '/v4/components'
+    | '/v4/flow-states'
     | '/v3/'
+    | '/v4/'
     | '/tools/$toolId/about'
     | '/tools/$toolId/blocked'
     | '/tools/$toolId/degraded'
@@ -344,14 +455,23 @@ export interface FileRouteTypes {
     | '/v3/products/$productId'
     | '/v3/projects/$projectId'
     | '/v3/projects/new'
+    | '/v4/connections/$typeId'
+    | '/v4/products/$productId'
+    | '/v4/projects/$projectId'
+    | '/v4/projects/new'
     | '/v3/connections/'
     | '/v3/library/'
     | '/v3/products/'
     | '/v3/projects/'
+    | '/v4/connections/'
+    | '/v4/library/'
+    | '/v4/products/'
+    | '/v4/projects/'
     | '/v3/tools/$productId/processing'
     | '/v3/tools/$productId/result'
     | '/v3/tools/$productId/review'
     | '/v3/tools/$productId/source'
+    | '/v4/run/$productId/$step'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -365,7 +485,10 @@ export interface FileRouteTypes {
     | '/tools/$toolId'
     | '/v3/components'
     | '/v3/flow-states'
+    | '/v4/components'
+    | '/v4/flow-states'
     | '/v3'
+    | '/v4'
     | '/tools/$toolId/about'
     | '/tools/$toolId/blocked'
     | '/tools/$toolId/degraded'
@@ -379,14 +502,23 @@ export interface FileRouteTypes {
     | '/v3/products/$productId'
     | '/v3/projects/$projectId'
     | '/v3/projects/new'
+    | '/v4/connections/$typeId'
+    | '/v4/products/$productId'
+    | '/v4/projects/$projectId'
+    | '/v4/projects/new'
     | '/v3/connections'
     | '/v3/library'
     | '/v3/products'
     | '/v3/projects'
+    | '/v4/connections'
+    | '/v4/library'
+    | '/v4/products'
+    | '/v4/projects'
     | '/v3/tools/$productId/processing'
     | '/v3/tools/$productId/result'
     | '/v3/tools/$productId/review'
     | '/v3/tools/$productId/source'
+    | '/v4/run/$productId/$step'
   id:
     | '__root__'
     | '/'
@@ -400,7 +532,10 @@ export interface FileRouteTypes {
     | '/tools/$toolId'
     | '/v3/components'
     | '/v3/flow-states'
+    | '/v4/components'
+    | '/v4/flow-states'
     | '/v3/'
+    | '/v4/'
     | '/tools/$toolId/about'
     | '/tools/$toolId/blocked'
     | '/tools/$toolId/degraded'
@@ -414,14 +549,23 @@ export interface FileRouteTypes {
     | '/v3/products/$productId'
     | '/v3/projects/$projectId'
     | '/v3/projects/new'
+    | '/v4/connections/$typeId'
+    | '/v4/products/$productId'
+    | '/v4/projects/$projectId'
+    | '/v4/projects/new'
     | '/v3/connections/'
     | '/v3/library/'
     | '/v3/products/'
     | '/v3/projects/'
+    | '/v4/connections/'
+    | '/v4/library/'
+    | '/v4/products/'
+    | '/v4/projects/'
     | '/v3/tools/$productId/processing'
     | '/v3/tools/$productId/result'
     | '/v3/tools/$productId/review'
     | '/v3/tools/$productId/source'
+    | '/v4/run/$productId/$step'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -434,19 +578,31 @@ export interface RootRouteChildren {
   ToolsToolIdRoute: typeof ToolsToolIdRouteWithChildren
   V3ComponentsRoute: typeof V3ComponentsRoute
   V3FlowStatesRoute: typeof V3FlowStatesRoute
+  V4ComponentsRoute: typeof V4ComponentsRoute
+  V4FlowStatesRoute: typeof V4FlowStatesRoute
   V3IndexRoute: typeof V3IndexRoute
+  V4IndexRoute: typeof V4IndexRoute
   V3ConnectionsTypeIdRoute: typeof V3ConnectionsTypeIdRoute
   V3ProductsProductIdRoute: typeof V3ProductsProductIdRoute
   V3ProjectsProjectIdRoute: typeof V3ProjectsProjectIdRoute
   V3ProjectsNewRoute: typeof V3ProjectsNewRoute
+  V4ConnectionsTypeIdRoute: typeof V4ConnectionsTypeIdRoute
+  V4ProductsProductIdRoute: typeof V4ProductsProductIdRoute
+  V4ProjectsProjectIdRoute: typeof V4ProjectsProjectIdRoute
+  V4ProjectsNewRoute: typeof V4ProjectsNewRoute
   V3ConnectionsIndexRoute: typeof V3ConnectionsIndexRoute
   V3LibraryIndexRoute: typeof V3LibraryIndexRoute
   V3ProductsIndexRoute: typeof V3ProductsIndexRoute
   V3ProjectsIndexRoute: typeof V3ProjectsIndexRoute
+  V4ConnectionsIndexRoute: typeof V4ConnectionsIndexRoute
+  V4LibraryIndexRoute: typeof V4LibraryIndexRoute
+  V4ProductsIndexRoute: typeof V4ProductsIndexRoute
+  V4ProjectsIndexRoute: typeof V4ProjectsIndexRoute
   V3ToolsProductIdProcessingRoute: typeof V3ToolsProductIdProcessingRoute
   V3ToolsProductIdResultRoute: typeof V3ToolsProductIdResultRoute
   V3ToolsProductIdReviewRoute: typeof V3ToolsProductIdReviewRoute
   V3ToolsProductIdSourceRoute: typeof V3ToolsProductIdSourceRoute
+  V4RunProductIdStepRoute: typeof V4RunProductIdStepRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -493,11 +649,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v4/': {
+      id: '/v4/'
+      path: '/v4'
+      fullPath: '/v4/'
+      preLoaderRoute: typeof V4IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v3/': {
       id: '/v3/'
       path: '/v3'
       fullPath: '/v3/'
       preLoaderRoute: typeof V3IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v4/flow-states': {
+      id: '/v4/flow-states'
+      path: '/v4/flow-states'
+      fullPath: '/v4/flow-states'
+      preLoaderRoute: typeof V4FlowStatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v4/components': {
+      id: '/v4/components'
+      path: '/v4/components'
+      fullPath: '/v4/components'
+      preLoaderRoute: typeof V4ComponentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/v3/flow-states': {
@@ -535,6 +712,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConnectionsTypeIdRouteImport
       parentRoute: typeof ConnectionsRoute
     }
+    '/v4/projects/': {
+      id: '/v4/projects/'
+      path: '/v4/projects'
+      fullPath: '/v4/projects/'
+      preLoaderRoute: typeof V4ProjectsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v4/products/': {
+      id: '/v4/products/'
+      path: '/v4/products'
+      fullPath: '/v4/products/'
+      preLoaderRoute: typeof V4ProductsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v4/library/': {
+      id: '/v4/library/'
+      path: '/v4/library'
+      fullPath: '/v4/library/'
+      preLoaderRoute: typeof V4LibraryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v4/connections/': {
+      id: '/v4/connections/'
+      path: '/v4/connections'
+      fullPath: '/v4/connections/'
+      preLoaderRoute: typeof V4ConnectionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v3/projects/': {
       id: '/v3/projects/'
       path: '/v3/projects'
@@ -561,6 +766,34 @@ declare module '@tanstack/react-router' {
       path: '/v3/connections'
       fullPath: '/v3/connections/'
       preLoaderRoute: typeof V3ConnectionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v4/projects/new': {
+      id: '/v4/projects/new'
+      path: '/v4/projects/new'
+      fullPath: '/v4/projects/new'
+      preLoaderRoute: typeof V4ProjectsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v4/projects/$projectId': {
+      id: '/v4/projects/$projectId'
+      path: '/v4/projects/$projectId'
+      fullPath: '/v4/projects/$projectId'
+      preLoaderRoute: typeof V4ProjectsProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v4/products/$productId': {
+      id: '/v4/products/$productId'
+      path: '/v4/products/$productId'
+      fullPath: '/v4/products/$productId'
+      preLoaderRoute: typeof V4ProductsProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v4/connections/$typeId': {
+      id: '/v4/connections/$typeId'
+      path: '/v4/connections/$typeId'
+      fullPath: '/v4/connections/$typeId'
+      preLoaderRoute: typeof V4ConnectionsTypeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/v3/projects/new': {
@@ -653,6 +886,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tools/$toolId/about'
       preLoaderRoute: typeof ToolsToolIdAboutRouteImport
       parentRoute: typeof ToolsToolIdRoute
+    }
+    '/v4/run/$productId/$step': {
+      id: '/v4/run/$productId/$step'
+      path: '/v4/run/$productId/$step'
+      fullPath: '/v4/run/$productId/$step'
+      preLoaderRoute: typeof V4RunProductIdStepRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/v3/tools/$productId/source': {
       id: '/v3/tools/$productId/source'
@@ -747,19 +987,31 @@ const rootRouteChildren: RootRouteChildren = {
   ToolsToolIdRoute: ToolsToolIdRouteWithChildren,
   V3ComponentsRoute: V3ComponentsRoute,
   V3FlowStatesRoute: V3FlowStatesRoute,
+  V4ComponentsRoute: V4ComponentsRoute,
+  V4FlowStatesRoute: V4FlowStatesRoute,
   V3IndexRoute: V3IndexRoute,
+  V4IndexRoute: V4IndexRoute,
   V3ConnectionsTypeIdRoute: V3ConnectionsTypeIdRoute,
   V3ProductsProductIdRoute: V3ProductsProductIdRoute,
   V3ProjectsProjectIdRoute: V3ProjectsProjectIdRoute,
   V3ProjectsNewRoute: V3ProjectsNewRoute,
+  V4ConnectionsTypeIdRoute: V4ConnectionsTypeIdRoute,
+  V4ProductsProductIdRoute: V4ProductsProductIdRoute,
+  V4ProjectsProjectIdRoute: V4ProjectsProjectIdRoute,
+  V4ProjectsNewRoute: V4ProjectsNewRoute,
   V3ConnectionsIndexRoute: V3ConnectionsIndexRoute,
   V3LibraryIndexRoute: V3LibraryIndexRoute,
   V3ProductsIndexRoute: V3ProductsIndexRoute,
   V3ProjectsIndexRoute: V3ProjectsIndexRoute,
+  V4ConnectionsIndexRoute: V4ConnectionsIndexRoute,
+  V4LibraryIndexRoute: V4LibraryIndexRoute,
+  V4ProductsIndexRoute: V4ProductsIndexRoute,
+  V4ProjectsIndexRoute: V4ProjectsIndexRoute,
   V3ToolsProductIdProcessingRoute: V3ToolsProductIdProcessingRoute,
   V3ToolsProductIdResultRoute: V3ToolsProductIdResultRoute,
   V3ToolsProductIdReviewRoute: V3ToolsProductIdReviewRoute,
   V3ToolsProductIdSourceRoute: V3ToolsProductIdSourceRoute,
+  V4RunProductIdStepRoute: V4RunProductIdStepRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
