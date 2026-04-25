@@ -70,7 +70,9 @@ export const Route = createFileRoute("/v4/run/$productId/$step")({
 });
 
 function FlowRunnerPage() {
-  const { productId, step } = Route.useParams();
+  const params = Route.useParams();
+  const productId = params.productId;
+  const step = params.step as StepId;
   const product = getProduct(productId);
   if (!product.steps.includes(step)) {
     throw notFound();
