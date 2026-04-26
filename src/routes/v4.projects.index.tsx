@@ -21,7 +21,7 @@ import {
 import { ArrowRight, Search, Plus, Download, ExternalLink, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/v4/projects/")({
-  head: () => ({ meta: [{ title: "Проекты — PerfOps V4" }] }),
+  head: () => ({ meta: [{ title: "Проекты — PerfOps" }] }),
   component: ProjectsPage,
 });
 
@@ -60,14 +60,14 @@ function ProjectsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Поиск по проектам"
-            className="h-8 pl-8 text-sm"
+            className="h-9 pl-8 text-sm"
           />
         </div>
         <Select
           value={productFilter}
           onValueChange={(v) => setProductFilter(v as ProductId | "all")}
         >
-          <SelectTrigger className="h-8 w-56 text-sm">
+          <SelectTrigger className="h-9 w-56 text-sm">
             <SelectValue placeholder="Продукт" />
           </SelectTrigger>
           <SelectContent>
@@ -90,7 +90,6 @@ function ProjectsPage() {
             <tr>
               <th className="px-3 py-2 font-medium">Проект</th>
               <th className="px-3 py-2 font-medium">Продукт</th>
-              <th className="px-3 py-2 font-medium">Описание</th>
               <th className="px-3 py-2 font-medium">Обновлено</th>
               <th className="px-3 py-2 font-medium">Результат</th>
               <th className="px-3 py-2 font-medium" />
@@ -118,16 +117,14 @@ function ProjectsPage() {
                     >
                       {p.name}
                     </Link>
+                    {p.description && (
+                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                        {p.description}
+                      </p>
+                    )}
                   </td>
                   <td className="px-3 py-2.5 align-top text-muted-foreground">
                     {product.name}
-                  </td>
-                  <td className="px-3 py-2.5 align-top text-xs text-muted-foreground">
-                    {p.description ? (
-                      <span className="line-clamp-1">{p.description}</span>
-                    ) : (
-                      <span className="text-muted-foreground/60">—</span>
-                    )}
                   </td>
                   <td className="px-3 py-2.5 align-top text-muted-foreground">
                     {p.updated}
@@ -137,7 +134,8 @@ function ProjectsPage() {
                       <span className="text-xs text-muted-foreground">{result.label}</span>
                     ) : (
                       <Link
-                        to="/v4/library"
+                        to="/v4/projects/$projectId"
+                        params={{ projectId: p.id }}
                         className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
                       >
                         {ResultIcon && <ResultIcon className="h-3.5 w-3.5" />}
@@ -159,7 +157,7 @@ function ProjectsPage() {
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={5} className="px-3 py-12 text-center text-sm text-muted-foreground">
                   Ничего не найдено по выбранным фильтрам.
                 </td>
               </tr>

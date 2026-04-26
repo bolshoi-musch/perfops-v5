@@ -8,12 +8,12 @@ import {
 } from "lucide-react";
 
 // ============================================================
-// PerfOps V4 — unified product-flow framework data layer
+// PerfOps V5 (in V4 namespace) — unified product platform data
 // ============================================================
-// Every product is a project type. Each product defines its own
-// ordered list of steps drawn from a shared step vocabulary.
-// All flows share the same shell, stepper, source selector,
-// validation summary, processing panel and result handoff.
+// Core entity: Project. A project has a product, sources,
+// parameters, current result and processing history.
+// Re-processing updates the project's current result; to keep
+// a snapshot, the user creates a new project.
 // ============================================================
 
 // ---------- Result formats (closed list of 3) ----------
@@ -133,7 +133,7 @@ export const accountStatusLabel: Record<AccountStatus, string> = {
 export const getConnectionType = (id: string | undefined): ConnectionType =>
   connectionTypes.find((t) => t.id === id) ?? connectionTypes[0];
 
-// ---------- Source selector ----------
+// ---------- Source kinds ----------
 
 export type SourceKind =
   | "upload"
@@ -153,29 +153,29 @@ export const sourceKindLabel: Record<SourceKind, string> = {
 export const sourceKindHint: Record<SourceKind, string> = {
   upload: "Файл с вашего компьютера",
   connection: "Данные напрямую из подключённого сервиса",
-  library: "Файл, ранее сохранённый в проекте",
+  library: "Источник, ранее сохранённый в Библиотеке",
   topic: "Короткое описание темы или направления",
-  url: "Адрес страницы или книги",
+  url: "Адрес страницы",
 };
 
 // ---------- Flow step vocabulary ----------
 
 export type StepId =
-  | "mode"
+  | "scenario"
   | "source"
-  | "merge"
+  | "combining"
+  | "metrics"
   | "params"
-  | "metrics-focus"
   | "check"
   | "run"
   | "result";
 
 export const stepLabel: Record<StepId, string> = {
-  mode: "Режим",
+  scenario: "Сценарий",
   source: "Источник",
-  merge: "Объединение",
+  combining: "Объединение",
+  metrics: "Метрики и фокус",
   params: "Параметры",
-  "metrics-focus": "Метрики и фокус",
   check: "Проверка",
   run: "Запуск",
   result: "Результат",
@@ -186,25 +186,19 @@ export const stepLabel: Record<StepId, string> = {
 export type ProductId =
   | "dashboard-builder"
   | "campaign-analysis"
+  | "semantics-generator"
   | "cross-minus"
-  | "bd-optimization"
-  | "semantics-generator";
+  | "bd-optimization";
+
+export interface ProductSection {
+  title: string;
+  items: string[];
+}
 
 export interface ProductPageContent {
-  /** «Что делает продукт» */
-  whatItDoes: string;
-  /** «Что вы получите» */
-  whatYouGet: string;
-  /** «Поддерживаемые источники» — короткие подписи под иконками. */
-  supportedSources: string[];
-  /** «Предпочтительные источники» */
-  preferredSources: string[];
-  /** «Советы и рекомендации» */
-  tips: string[];
-  /** «Ограничения» */
-  limitations: string[];
-  /** «Где сохраняется результат» */
-  resultDestination: string;
+  /** Подзаголовок под названием продукта на странице продукта. */
+  description: string;
+  sections: ProductSection[];
 }
 
 export interface Product {
@@ -213,7 +207,6 @@ export interface Product {
   shortDescription: string;
   icon: LucideIcon;
   resultFormat: ResultFormat;
-  resultName: string;
   /** Перечень шагов в порядке отображения. */
   steps: StepId[];
   /** Какие типы источников разрешены продуктом. */
@@ -222,12 +215,13 @@ export interface Product {
   supportedConnections: ConnectionTypeId[];
   /** Поддерживаемые форматы файлов при ручной загрузке. */
   acceptedFileTypes: string[];
-  /** Подсказки на правом «Что можно использовать» — список строк. */
-  sourceHelp: string[];
+  /** Поддерживается ли второй источник. */
+  supportsSecondSource: boolean;
+  /** Поддерживается ли объединение двух источников. */
+  supportsCombining: boolean;
+  /** Есть ли публичная демо-версия результата. */
+  hasDemoDashboard: boolean;
   page: ProductPageContent;
-  /** Имя примера результата — то, что увидит пользователь в Библиотеке. */
-  exampleResultName: string;
-  exampleResultSummary: string;
 }
 
 export const products: Product[] = [
@@ -238,45 +232,47 @@ export const products: Product[] = [
       "Сводный дашборд по выгрузкам кампаний с разбивкой по периодам.",
     icon: LayoutDashboard,
     resultFormat: "dashboard-link",
-    resultName: "Ссылка на дашборд",
-    steps: ["source", "merge", "check", "run", "result"],
+    steps: ["source", "combining", "check", "run", "result"],
     allowedSources: ["upload", "connection", "library"],
     supportedConnections: ["yandex-direct", "google-ads", "google-sheets"],
     acceptedFileTypes: [".xlsx", ".csv"],
-    sourceHelp: [
-      "Поддерживаются: .xlsx, .csv",
-      "Можно выбрать подключение: Яндекс Директ, Google Ads, Google Sheets",
-      "Можно выбрать источник из Библиотеки",
-      "Можно добавить второй источник для объединения",
-    ],
+    supportsSecondSource: true,
+    supportsCombining: true,
+    hasDemoDashboard: true,
     page: {
-      whatItDoes:
-        "Конструктор дашбордов собирает структурированный дашборд по кампаниям из одной или нескольких выгрузок: разбивка по периодам, ключевые метрики и сегменты в одном окне.",
-      whatYouGet:
-        "Готовый дашборд по ссылке — открывается прямо из Библиотеки проекта, доступен команде и обновляется при перезапуске продукта.",
-      supportedSources: [
-        ".xlsx, .csv — ручная загрузка",
-        "Подключения: Яндекс Директ, Google Ads, Google Sheets",
-        "Источник из Библиотеки проекта",
-        "Можно объединить два источника",
+      description:
+        "Дашборд по маркетинговым данным из Яндекс Директ, Яндекс Метрика и AppMetrica.",
+      sections: [
+        {
+          title: "Что умеет дашборд",
+          items: [
+            "Теги и комбинации: если в названиях есть -_-/ | — выделит теги и покажет статистику по ним",
+            "Уровни данных: кампания / группа / ... (если есть в отчёте)",
+            "Объединение 2 файлов: единый датасет для одного дашборда",
+            "Добавление релевантных метрик: например, из кликов и конверсий рассчитает CR",
+          ],
+        },
+        {
+          title: "Что будет в дашборде",
+          items: [
+            "графики по объектам и периодам",
+            "сравнение периодов и сегментов",
+            "воронка, инсайты и прогноз по метрикам",
+            "таблица по всем объектам",
+          ],
+        },
+        {
+          title: "Предпочтительные источники",
+          items: ["Яндекс Директ, Яндекс Метрика, AppMetrica."],
+        },
+        {
+          title: "Ограничения",
+          items: [
+            "CSV/XLSX · до 10 МБ · до 100 000 строк · до 30 столбцов · ссылка действует 30 дней",
+          ],
+        },
       ],
-      preferredSources: [
-        "Свежая выгрузка по кампаниям с разбивкой по дням",
-        "Подключение к рекламному кабинету — данные актуализируются автоматически",
-      ],
-      tips: [
-        "Для сравнения периодов добавьте два источника — за прошлый и текущий период.",
-        "Если в выгрузке есть колонка с UTM-меткой, дашборд автоматически сгруппирует кампании по источнику.",
-      ],
-      limitations: [
-        "Поддерживается до 100 000 строк на источник.",
-        "Источники должны содержать колонку «Кампания» и числовые метрики.",
-      ],
-      resultDestination: "Библиотека проекта · ссылка на дашборд",
     },
-    exampleResultName: "Дашборд кампаний — апрель",
-    exampleResultSummary:
-      "18 кампаний, разбивка по неделям, метрики CPA / CR / расход.",
   },
   {
     id: "campaign-analysis",
@@ -285,43 +281,54 @@ export const products: Product[] = [
       "Аналитический отчёт с изменениями, аномалиями и сегментами внимания.",
     icon: BarChart3,
     resultFormat: "analytics-report",
-    resultName: "Аналитический отчёт",
-    steps: ["source", "metrics-focus", "check", "run", "result"],
+    steps: ["source", "metrics", "check", "run", "result"],
     allowedSources: ["upload", "connection", "library"],
     supportedConnections: ["yandex-direct", "google-ads"],
     acceptedFileTypes: [".xlsx", ".csv"],
-    sourceHelp: [
-      "Поддерживаются: .xlsx, .csv",
-      "Можно выбрать подключение или источник из Библиотеки",
-      "Фокус анализа можно указать на следующем шаге",
-    ],
+    supportsSecondSource: false,
+    supportsCombining: false,
+    hasDemoDashboard: false,
     page: {
-      whatItDoes:
-        "Анализ кампаний разбирает выгрузку и формирует аналитический отчёт: изменения за период, аномалии, сегменты с просадкой и точки роста.",
-      whatYouGet:
-        "Аналитический отчёт, который открывается прямо в платформе. Дополнительно — секция дашборда по тем же данным.",
-      supportedSources: [
-        ".xlsx, .csv — ручная загрузка",
-        "Подключения: Яндекс Директ, Google Ads",
-        "Источник из Библиотеки проекта",
+      description:
+        "Разбор рекламных кампаний, проблем и точек роста.",
+      sections: [
+        {
+          title: "Что умеет инструмент",
+          items: [
+            "Итоги по ключевым метрикам (CPA, CTR, CR, ROAS и др.)",
+            "Инсайты и закономерности в данных",
+            "Рекомендации по оптимизации",
+            "Потенциал роста",
+          ],
+        },
+        {
+          title: "Что будет в отчёте",
+          items: [
+            "аналитика по метрикам кампаний",
+            "паттерны и аномалии по тегам (_, -, |)",
+            "инсайты, выводы и рекомендации",
+            "дашборд с интерактивными графиками",
+          ],
+        },
+        {
+          title: "Предпочтительные источники",
+          items: ["Яндекс Директ, Яндекс Метрика, AppMetrica."],
+        },
+        {
+          title: "Советы",
+          items: [
+            "Загружайте однотипные кампании — не смешивайте бренд с небрендом и поиск с РСЯ",
+            "Загружайте данные по одному типу конверсий",
+          ],
+        },
+        {
+          title: "Ограничения",
+          items: [
+            "CSV/XLSX · до 5 МБ · до 50 000 строк · до 15 столбцов · отчёты хранятся 7 дней",
+          ],
+        },
       ],
-      preferredSources: [
-        "Выгрузка с разбивкой по дням за 14–30 дней",
-        "Подключение к рекламному кабинету для регулярного анализа",
-      ],
-      tips: [
-        "Используйте поле «Фокус анализа», чтобы указать конкретный сегмент или гипотезу.",
-        "Выберите 4–6 ключевых метрик — отчёт получится более сфокусированным.",
-      ],
-      limitations: [
-        "Анализируется не более 60 дней истории за один запуск.",
-        "Если в выгрузке нет дат, отчёт строится только по агрегированным значениям.",
-      ],
-      resultDestination: "Библиотека проекта · аналитический отчёт",
     },
-    exampleResultName: "Анализ кампаний — апрель",
-    exampleResultSummary:
-      "7 аномалий, 3 сегмента с просадкой CR, рекомендации по перераспределению бюджета.",
   },
   {
     id: "semantics-generator",
@@ -330,45 +337,43 @@ export const products: Product[] = [
       "Excel-файл с дедуплицированным семантическим ядром и кластерами.",
     icon: Type,
     resultFormat: "excel",
-    resultName: "Excel-файл с семантикой",
-    steps: ["mode", "source", "params", "check", "run", "result"],
+    steps: ["scenario", "source", "params", "check", "run", "result"],
     allowedSources: ["topic", "url", "upload", "library"],
     supportedConnections: [],
     acceptedFileTypes: [".xlsx", ".csv", ".txt"],
-    sourceHelp: [
-      "Можно ввести тему",
-      "Можно указать ссылку",
-      "Можно загрузить файл",
-      "Можно выбрать источник из Библиотеки",
-    ],
+    supportsSecondSource: false,
+    supportsCombining: false,
+    hasDemoDashboard: false,
     page: {
-      whatItDoes:
-        "Собирает и обрабатывает семантическое ядро: расширяет сид-список, дедуплицирует, кластеризует и применяет минус-фильтры в зависимости от выбранного режима.",
-      whatYouGet:
-        "Excel-файл с готовым семантическим ядром: фразы, частотности, кластеры, пометки по брендам и исключениям.",
-      supportedSources: [
-        "Текстовая тема или короткий бриф",
-        "Ссылка на страницу-донор",
-        ".xlsx, .csv, .txt — ручная загрузка сид-ключей",
-        "Источник из Библиотеки проекта",
+      description:
+        "Собирает ключевые фразы, помогает найти идеи по теме и формирует итоговый файл для работы.",
+      sections: [
+        {
+          title: "Что умеет инструмент",
+          items: [
+            "Собирает ключевые фразы по теме в сценариях «Консервативный», «Сбалансированный» и «Охватный»",
+            "Проводит исследование: список по теме и расширение seed-списка",
+            "Кластеризует готовые списки фраз из TXT, CSV и XLSX",
+          ],
+        },
+        {
+          title: "Какие входы поддерживаются",
+          items: [
+            "Текст, URL и файл для сбора семантики",
+            "Текст или seed-файл для исследования",
+            "TXT, CSV и XLSX для кластеризации с автоопределением текстового столбца",
+          ],
+        },
+        {
+          title: "Что будет в результате",
+          items: [
+            "Excel-файл со списком фраз или расширениями",
+            "Excel-файл с кластерами для сценария кластеризации",
+            "Результат сохраняется в Библиотеке",
+          ],
+        },
       ],
-      preferredSources: [
-        "Список из 10–50 сид-ключей в файле или текстом",
-        "Ссылка на посадочную страницу для расширения по контенту",
-      ],
-      tips: [
-        "Для нового направления начните с режима «Охватный», для чистки — с «Консервативный».",
-        "Загрузите файл с минус-словами на шаге «Параметры», чтобы сразу отфильтровать ненужное.",
-      ],
-      limitations: [
-        "За один запуск выгружается не более 20 000 фраз.",
-        "Кластеризация работает на русском и английском языках.",
-      ],
-      resultDestination: "Библиотека проекта · Excel-файл",
     },
-    exampleResultName: "Семантическое ядро — апрель.xlsx",
-    exampleResultSummary:
-      "4 218 ключей, 36 кластеров, средняя частотность по кластеру.",
   },
   {
     id: "cross-minus",
@@ -377,93 +382,87 @@ export const products: Product[] = [
       "Excel-файл с готовыми списками кросс-минус-слов по группам объявлений.",
     icon: Minus,
     resultFormat: "excel",
-    resultName: "Excel-файл с минус-словами",
     steps: ["source", "check", "run", "result"],
-    allowedSources: ["upload", "library"],
-    supportedConnections: [],
+    allowedSources: ["upload", "connection", "library"],
+    supportedConnections: ["yandex-direct"],
     acceptedFileTypes: [".xlsx", ".csv"],
-    sourceHelp: [
-      "Поддерживаются: .xlsx, .csv",
-      "Нужна выгрузка с кампаниями, ключевыми фразами и показами",
-    ],
+    supportsSecondSource: false,
+    supportsCombining: false,
+    hasDemoDashboard: false,
     page: {
-      whatItDoes:
-        "Строит Excel-файл с кросс-минусами по группам объявлений на основе семантического ядра — готовый для загрузки в рекламную сеть.",
-      whatYouGet:
-        "Excel-файл со списками минус-слов, разложенный по кампаниям и группам.",
-      supportedSources: [
-        ".xlsx, .csv — ручная загрузка",
-        "Источник из Библиотеки проекта",
+      description:
+        "Находит пересечения между кампаниями Яндекс Директ и формирует списки минус-фраз.",
+      sections: [
+        {
+          title: "Что умеет инструмент",
+          items: [
+            "На основе выгрузки «Ключевые фразы» со статистикой показов находит пересечения между кампаниями и собирает для каждой РК свой список минус-фраз.",
+            "Минусует только тематические слова, не минусует служебные части речи и слишком общие слова, которые повторяются во многих кампаниях.",
+            "Минусация каскадная, а не сплошная: вложенные запросы не должны полностью терять показы.",
+            "Типичный кейс: в аккаунте есть брендовая и небрендовая РК, и автотаргетинг начинает подмешивать брендовые запросы туда, где они не нужны. Если кампаний много, собирать списки минус-слов вручную сложно.",
+          ],
+        },
+        {
+          title: "Что будет в результате",
+          items: ["Готовый XLSX-файл со списками минус-фраз по кампаниям."],
+        },
+        {
+          title: "Ограничения",
+          items: ["XLSX/CSV · до 50 МБ"],
+        },
       ],
-      preferredSources: [
-        "Семантическое ядро с колонками «Кампания», «Группа», «Ключ», «Показы»",
-      ],
-      tips: [
-        "Чем чище ядро, тем компактнее результат — пройдитесь минус-фильтрами заранее.",
-        "Если выгрузка большая, загрузите её один раз в Библиотеку и переиспользуйте между запусками.",
-      ],
-      limitations: [
-        "Поддерживается до 200 000 фраз на источник.",
-        "Файл должен содержать одну строку на пару «Группа — Ключ».",
-      ],
-      resultDestination: "Библиотека проекта · Excel-файл",
     },
-    exampleResultName: "Кросс-минус — апрель.xlsx",
-    exampleResultSummary:
-      "Кросс-минусы для 24 групп объявлений, 1 412 уникальных минус-слов.",
   },
   {
     id: "bd-optimization",
-    name: "Оптимизация ставок и бюджетов",
+    name: "BD Optimization",
     shortDescription:
-      "Excel-файл с рекомендациями по ставкам и распределению бюджета.",
+      "Excel-файл для снижения каннибализации и атрибуцированных потерь.",
     icon: Sparkles,
     resultFormat: "excel",
-    resultName: "Excel-файл с рекомендациями",
     steps: ["source", "params", "check", "run", "result"],
     allowedSources: ["upload", "connection", "library"],
     supportedConnections: ["yandex-direct", "google-ads"],
     acceptedFileTypes: [".xlsx", ".csv"],
-    sourceHelp: [
-      "Поддерживаются: .xlsx, .csv",
-      "Можно выбрать подключение или источник из Библиотеки",
-    ],
+    supportsSecondSource: false,
+    supportsCombining: false,
+    hasDemoDashboard: false,
     page: {
-      whatItDoes:
-        "Считает рекомендации по ставкам и распределению бюджета на основе свежих данных по кампаниям.",
-      whatYouGet:
-        "Excel-файл с рекомендациями по каждой кампании: новая ставка, изменение бюджета и причина.",
-      supportedSources: [
-        ".xlsx, .csv — ручная загрузка",
-        "Подключения: Яндекс Директ, Google Ads",
-        "Источник из Библиотеки проекта",
+      description:
+        "Сбор минус-фраз для снижения каннибализации и атрибуцированных потерь.",
+      sections: [
+        {
+          title: "Что умеет инструмент",
+          items: [
+            "Разбивает каждый запрос на отдельные слова, пары (биграммы) и тройки слов (триграммы) с агрегированной статистикой как по исходным данным, так и с добавлением объёма конверсий по каждой фразе.",
+            "В результате в списки минус-слов можно добавлять не исходные фразы, а более общие маски.",
+          ],
+        },
+        {
+          title: "Что будет в отчёте",
+          items: [
+            "Дополнительные полезные метрики, которые отражают уровень каннибализации и атрибуцированных потерь относительно собственных показателей фраз: расходов, кликов, конверсий.",
+            "Для каннибализации: cannib_net, cannib_per_cost, cannib_per_conversion.",
+            "Для атрибуцированных потерь: loss_per_our_click, loss_per_conversion.",
+          ],
+        },
+        {
+          title: "Ограничения",
+          items: [
+            "XLSX/CSV · до 100 МБ · доступ только для разрешённых доменов и пользователей",
+          ],
+        },
       ],
-      preferredSources: [
-        "Подключение к рекламному кабинету — рекомендации обновляются на свежих данных",
-        "Выгрузка статистики за 14–28 дней",
-      ],
-      tips: [
-        "Перед запуском уточните цели — целевой CPA, ROAS или ограничение по бюджету.",
-        "Если кампаний много, ограничьте набор фильтром по статусу или меткам.",
-      ],
-      limitations: [
-        "Расчёт рассчитан на кампании с понятной целевой метрикой.",
-        "Для новых кампаний без накопленной статистики рекомендации будут консервативными.",
-      ],
-      resultDestination: "Библиотека проекта · Excel-файл",
     },
-    exampleResultName: "Рекомендации по ставкам — апрель.xlsx",
-    exampleResultSummary:
-      "32 кампании: 11 повышений ставок, 6 снижений, перераспределение бюджета на 18%.",
   },
 ];
 
 export const getProduct = (id: string | undefined): Product =>
   products.find((p) => p.id === id) ?? products[0];
 
-// ---------- Modes (only for semantics generator) ----------
+// ---------- Scenarios (semantics product) ----------
 
-export type SemanticsMode =
+export type SemanticsScenarioId =
   | "conservative"
   | "balanced"
   | "broad"
@@ -471,128 +470,309 @@ export type SemanticsMode =
   | "expand"
   | "cluster";
 
-export interface SemanticsModeDef {
-  id: SemanticsMode;
+export type SemanticsScenarioGroup = "collection" | "research" | "processing";
+
+export interface SemanticsScenario {
+  id: SemanticsScenarioId;
   name: string;
   description: string;
+  group: SemanticsScenarioGroup;
 }
 
-export const semanticsModes: SemanticsModeDef[] = [
+export const semanticsScenarioGroupLabel: Record<SemanticsScenarioGroup, string> = {
+  collection: "Сбор семантики",
+  research: "Исследование",
+  processing: "Обработка",
+};
+
+export const semanticsScenarios: SemanticsScenario[] = [
   {
     id: "conservative",
     name: "Консервативный",
-    description: "Минимум расширений, упор на чистоту и точность ядра.",
+    description: "Собирает более точные и сдержанные варианты запросов.",
+    group: "collection",
   },
   {
     id: "balanced",
     name: "Сбалансированный",
-    description: "Баланс охвата и чистоты — режим по умолчанию.",
+    description: "Оптимальный сценарий для большинства стандартных запусков.",
+    group: "collection",
   },
   {
     id: "broad",
     name: "Охватный",
-    description: "Максимальное расширение, подходит для новых направлений.",
+    description:
+      "Даёт более широкий охват и больше идей по теме, но релевантность ниже.",
+    group: "collection",
   },
   {
     id: "topic-list",
     name: "Список по теме",
-    description: "Сбор фраз вокруг одной темы или сид-ключа.",
+    description:
+      "Собирает список по теме. Например: «русские поэты» → пушкин, лермонтов, есенин.",
+    group: "research",
   },
   {
     id: "expand",
     name: "Расширение списка",
-    description: "Дополняет уже готовый список синонимами и вариантами.",
+    description:
+      "Расширяет готовый список запросов. Например: «александр пушкин» → «стихи пушкина», «поэт пушкин».",
+    group: "research",
   },
   {
     id: "cluster",
     name: "Кластеризация",
-    description:
-      "Не расширяет фразы, а группирует уже собранное ядро по кластерам.",
+    description: "Группирует готовый список фраз по кластерам.",
+    group: "processing",
   },
 ];
 
-// ---------- Metrics catalog (for campaign-analysis) ----------
+// ---------- Metrics catalog (campaign-analysis) ----------
+
+export type MetricGroup = "absolute" | "relative";
 
 export interface MetricDef {
   id: string;
   name: string;
-  hint: string;
+  group: MetricGroup;
 }
 
+export const metricGroupLabel: Record<MetricGroup, string> = {
+  absolute: "Абсолютные метрики",
+  relative: "Относительные и стоимостные",
+};
+
 export const metricsCatalog: MetricDef[] = [
-  { id: "impressions", name: "Показы", hint: "impressions" },
-  { id: "clicks", name: "Клики", hint: "clicks" },
-  { id: "cost", name: "Расход", hint: "cost" },
-  { id: "conversions", name: "Конверсии", hint: "conversions" },
-  { id: "ctr", name: "CTR", hint: "Кликабельность" },
-  { id: "cpc", name: "CPC", hint: "Цена клика" },
-  { id: "cr", name: "CR", hint: "Конверсия в действие" },
-  { id: "cpa", name: "CPA", hint: "Цена действия" },
+  { id: "impressions", name: "Показы", group: "absolute" },
+  { id: "clicks", name: "Клики", group: "absolute" },
+  { id: "cost", name: "Расход", group: "absolute" },
+  { id: "conversions", name: "Конверсии", group: "absolute" },
+  { id: "ctr", name: "CTR", group: "relative" },
+  { id: "cpc", name: "CPC", group: "relative" },
+  { id: "cr", name: "CR", group: "relative" },
+  { id: "cpa", name: "CPA", group: "relative" },
 ];
 
 // ---------- Projects ----------
+
+export interface ProjectSourceRef {
+  /** Имя для отображения. */
+  name: string;
+  /** Тип источника. */
+  kind: SourceKind;
+  /** Подпись формата / интеграции / размера. */
+  meta?: string;
+}
+
+export interface ProcessingHistoryItem {
+  id: string;
+  startedAt: string;
+  finishedAt?: string;
+  status: "completed" | "failed" | "saved-locally";
+  note?: string;
+}
+
+export interface CurrentResult {
+  /** Имя результата (как сохранён в Библиотеке). */
+  name: string;
+  format: ResultFormat;
+  /** Соответствующий идентификатор записи в Библиотеке. */
+  libraryId: string;
+  /** Если true — есть локальная копия, но в Библиотеке не сохранён. */
+  notSavedToLibrary?: boolean;
+}
 
 export interface Project {
   id: string;
   name: string;
   description?: string;
   productId: ProductId;
+  /** Человекочитаемый возраст обновления. */
   updated: string;
+  /** ISO timestamp для сортировки. */
   updatedAt: string;
-  resultLibraryId?: string;
+  sources: ProjectSourceRef[];
+  parameters: { label: string; value: string }[];
+  currentResult?: CurrentResult;
+  history: ProcessingHistoryItem[];
 }
 
 export const projects: Project[] = [
   {
-    id: "spring-dashboard",
-    name: "Весенний дашборд кампаний",
-    description: "Сводный отчёт по апрельским кампаниям для еженедельного ревью.",
+    id: "dashboards-26-04-2026",
+    name: "Конструктор дашбордов — 26.04.2026",
+    description: "Сводный дашборд по выгрузкам Яндекс Директ.",
     productId: "dashboard-builder",
     updated: "2 часа назад",
-    updatedAt: "2025-04-25T08:00:00",
-    resultLibraryId: "lib-dashboard-apr",
+    updatedAt: "2026-04-26T08:00:00",
+    sources: [
+      {
+        name: "campaign_export.xlsx",
+        kind: "upload",
+        meta: "XLSX · 412 КБ",
+      },
+      {
+        name: "Яндекс Директ — Основной кабинет",
+        kind: "connection",
+        meta: "Яндекс Директ",
+      },
+    ],
+    parameters: [
+      { label: "Период", value: "1–25 апреля 2026" },
+      { label: "Объединение", value: "По ключам date + campaign_id" },
+    ],
+    currentResult: {
+      name: "Дашборд кампаний — 26.04.2026",
+      format: "dashboard-link",
+      libraryId: "lib-dashboard-26-04",
+    },
+    history: [
+      {
+        id: "h-1",
+        startedAt: "26.04.2026, 10:55",
+        finishedAt: "26.04.2026, 10:58",
+        status: "completed",
+      },
+      {
+        id: "h-2",
+        startedAt: "25.04.2026, 18:20",
+        finishedAt: "25.04.2026, 18:23",
+        status: "completed",
+        note: "Первая обработка после создания проекта",
+      },
+    ],
   },
   {
-    id: "april-cross-minus",
-    name: "Кросс-минусовка — апрель",
-    description: "Чистка пересечений по поисковым кампаниям.",
+    id: "cross-minus-25-04-2026",
+    name: "Кросс-минусовка — 25.04.2026",
     productId: "cross-minus",
     updated: "вчера",
-    updatedAt: "2025-04-24T14:25:00",
-    resultLibraryId: "lib-cross-minus-apr",
+    updatedAt: "2026-04-25T14:25:00",
+    sources: [
+      {
+        name: "keywords_export.xlsx",
+        kind: "upload",
+        meta: "XLSX · 1,2 МБ",
+      },
+    ],
+    parameters: [],
+    currentResult: {
+      name: "Кросс-минус — 25.04.2026.xlsx",
+      format: "excel",
+      libraryId: "lib-cross-minus-25-04",
+    },
+    history: [
+      {
+        id: "h-1",
+        startedAt: "25.04.2026, 16:10",
+        finishedAt: "25.04.2026, 16:12",
+        status: "completed",
+      },
+    ],
   },
   {
-    id: "weekly-campaign-analysis",
-    name: "Еженедельный анализ кампаний",
-    description: "Аномалии и просадки по основным направлениям.",
+    id: "campaign-analysis-23-04-2026",
+    name: "Анализ кампаний — 23.04.2026",
+    description: "Еженедельный разбор поисковых кампаний.",
     productId: "campaign-analysis",
     updated: "3 дня назад",
-    updatedAt: "2025-04-22T11:00:00",
-    resultLibraryId: "lib-campaign-analysis-apr",
+    updatedAt: "2026-04-23T11:00:00",
+    sources: [
+      {
+        name: "stats_april.csv",
+        kind: "upload",
+        meta: "CSV · 88 КБ",
+      },
+    ],
+    parameters: [
+      { label: "Метрики", value: "CPA, Конверсии" },
+      {
+        label: "Фокус анализа",
+        value: "Сделайте акцент на CPA и проблемных кампаниях",
+      },
+    ],
+    currentResult: {
+      name: "Анализ кампаний — 23.04.2026",
+      format: "analytics-report",
+      libraryId: "lib-campaign-analysis-23-04",
+    },
+    history: [
+      {
+        id: "h-1",
+        startedAt: "23.04.2026, 11:30",
+        finishedAt: "23.04.2026, 11:35",
+        status: "completed",
+      },
+    ],
   },
   {
-    id: "bd-optimization-april",
-    name: "Оптимизация ставок — апрель",
+    id: "bd-optimization-22-04-2026",
+    name: "BD Optimization — 22.04.2026",
     productId: "bd-optimization",
     updated: "4 дня назад",
-    updatedAt: "2025-04-21T16:30:00",
-    resultLibraryId: "lib-bd-optim-apr",
+    updatedAt: "2026-04-22T16:30:00",
+    sources: [
+      {
+        name: "keywords_full.xlsx",
+        kind: "upload",
+        meta: "XLSX · 6,4 МБ",
+      },
+    ],
+    parameters: [],
+    currentResult: {
+      name: "BD Optimization — 22.04.2026.xlsx",
+      format: "excel",
+      libraryId: "lib-bd-optim-22-04",
+    },
+    history: [
+      {
+        id: "h-1",
+        startedAt: "22.04.2026, 17:00",
+        finishedAt: "22.04.2026, 17:18",
+        status: "completed",
+      },
+    ],
   },
   {
-    id: "semantics-launch",
-    name: "Семантика для нового направления",
-    description: "Расширение охвата по продуктовой линейке.",
+    id: "semantics-19-04-2026",
+    name: "Сбор семантики — 19.04.2026",
+    description: "Расширение ядра по новой продуктовой линейке.",
     productId: "semantics-generator",
     updated: "неделю назад",
-    updatedAt: "2025-04-18T10:00:00",
-    resultLibraryId: "lib-semantics-apr",
+    updatedAt: "2026-04-19T10:00:00",
+    sources: [
+      {
+        name: "Тема: «беспроводные наушники»",
+        kind: "topic",
+      },
+    ],
+    parameters: [
+      { label: "Сценарий", value: "Сбалансированный" },
+      { label: "Минус-слова", value: "Не указаны" },
+    ],
+    currentResult: {
+      name: "Семантическое ядро — 19.04.2026.xlsx",
+      format: "excel",
+      libraryId: "lib-semantics-19-04",
+    },
+    history: [
+      {
+        id: "h-1",
+        startedAt: "19.04.2026, 10:05",
+        finishedAt: "19.04.2026, 10:11",
+        status: "completed",
+      },
+    ],
   },
   {
-    id: "march-dashboard",
-    name: "Мартовский дашборд",
+    id: "dashboards-02-04-2026",
+    name: "Конструктор дашбордов — 02.04.2026",
     productId: "dashboard-builder",
     updated: "2 апреля",
-    updatedAt: "2025-04-02T10:00:00",
+    updatedAt: "2026-04-02T10:00:00",
+    sources: [],
+    parameters: [],
+    history: [],
   },
 ];
 
@@ -640,130 +820,125 @@ export interface LibraryEntry {
 
 export const libraryEntries: LibraryEntry[] = [
   {
-    id: "lib-dashboard-apr",
-    name: "Дашборд кампаний — апрель",
+    id: "lib-dashboard-26-04",
+    name: "Дашборд кампаний — 26.04.2026",
     kind: "result",
     format: "dashboard-link",
     productId: "dashboard-builder",
-    projectId: "spring-dashboard",
-    projectName: "Весенний дашборд кампаний",
+    projectId: "dashboards-26-04-2026",
+    projectName: "Конструктор дашбордов — 26.04.2026",
     updated: "2 часа назад",
-    updatedAt: "2025-04-25T08:00:00",
+    updatedAt: "2026-04-26T08:00:00",
   },
   {
-    id: "src-campaign-export-apr",
+    id: "src-campaign-export",
     name: "campaign_export.xlsx",
     kind: "source",
     format: "xlsx",
-    projectId: "spring-dashboard",
-    projectName: "Весенний дашборд кампаний",
+    projectId: "dashboards-26-04-2026",
+    projectName: "Конструктор дашбордов — 26.04.2026",
     updated: "2 часа назад",
-    updatedAt: "2025-04-25T07:50:00",
+    updatedAt: "2026-04-26T07:50:00",
     size: "412 КБ",
   },
   {
-    id: "src-yd-spring",
-    name: "Яндекс Директ — Весенние кампании",
+    id: "src-yd-main",
+    name: "Яндекс Директ — Основной кабинет",
     kind: "source",
     format: "yandex-direct",
-    projectId: "spring-dashboard",
-    projectName: "Весенний дашборд кампаний",
+    projectId: "dashboards-26-04-2026",
+    projectName: "Конструктор дашбордов — 26.04.2026",
     updated: "сегодня",
-    updatedAt: "2025-04-25T09:00:00",
+    updatedAt: "2026-04-26T09:00:00",
   },
   {
-    id: "lib-cross-minus-apr",
-    name: "Кросс-минус — апрель.xlsx",
+    id: "lib-cross-minus-25-04",
+    name: "Кросс-минус — 25.04.2026.xlsx",
     kind: "result",
     format: "excel",
     productId: "cross-minus",
-    projectId: "april-cross-minus",
-    projectName: "Кросс-минусовка — апрель",
+    projectId: "cross-minus-25-04-2026",
+    projectName: "Кросс-минусовка — 25.04.2026",
     updated: "вчера",
-    updatedAt: "2025-04-24T14:25:00",
+    updatedAt: "2026-04-25T14:25:00",
     size: "84 КБ",
   },
   {
-    id: "src-semantic-core",
-    name: "semantic_core.xlsx",
+    id: "src-keywords-export",
+    name: "keywords_export.xlsx",
     kind: "source",
     format: "xlsx",
-    projectId: "april-cross-minus",
-    projectName: "Кросс-минусовка — апрель",
+    projectId: "cross-minus-25-04-2026",
+    projectName: "Кросс-минусовка — 25.04.2026",
     updated: "вчера",
-    updatedAt: "2025-04-24T13:00:00",
+    updatedAt: "2026-04-25T13:00:00",
     size: "1,2 МБ",
   },
   {
-    id: "lib-campaign-analysis-apr",
-    name: "Анализ кампаний — апрель",
+    id: "lib-campaign-analysis-23-04",
+    name: "Анализ кампаний — 23.04.2026",
     kind: "result",
     format: "analytics-report",
     productId: "campaign-analysis",
-    projectId: "weekly-campaign-analysis",
-    projectName: "Еженедельный анализ кампаний",
+    projectId: "campaign-analysis-23-04-2026",
+    projectName: "Анализ кампаний — 23.04.2026",
     updated: "3 дня назад",
-    updatedAt: "2025-04-22T11:00:00",
+    updatedAt: "2026-04-23T11:00:00",
   },
   {
     id: "src-stats-april",
     name: "stats_april.csv",
     kind: "source",
     format: "csv",
-    projectId: "weekly-campaign-analysis",
-    projectName: "Еженедельный анализ кампаний",
+    projectId: "campaign-analysis-23-04-2026",
+    projectName: "Анализ кампаний — 23.04.2026",
     updated: "3 дня назад",
-    updatedAt: "2025-04-22T10:30:00",
+    updatedAt: "2026-04-23T10:30:00",
     size: "88 КБ",
   },
   {
-    id: "src-google-ads-main",
-    name: "Google Ads — Основной MCC",
-    kind: "source",
-    format: "google-ads",
-    projectId: "weekly-campaign-analysis",
-    projectName: "Еженедельный анализ кампаний",
-    updated: "3 дня назад",
-    updatedAt: "2025-04-22T10:00:00",
-  },
-  {
-    id: "lib-bd-optim-apr",
-    name: "Рекомендации по ставкам — апрель.xlsx",
+    id: "lib-bd-optim-22-04",
+    name: "BD Optimization — 22.04.2026.xlsx",
     kind: "result",
     format: "excel",
     productId: "bd-optimization",
-    projectId: "bd-optimization-april",
-    projectName: "Оптимизация ставок — апрель",
+    projectId: "bd-optimization-22-04-2026",
+    projectName: "BD Optimization — 22.04.2026",
     updated: "4 дня назад",
-    updatedAt: "2025-04-21T16:30:00",
+    updatedAt: "2026-04-22T16:30:00",
     size: "210 КБ",
   },
   {
-    id: "lib-semantics-apr",
-    name: "Семантическое ядро — апрель.xlsx",
+    id: "src-keywords-full",
+    name: "keywords_full.xlsx",
+    kind: "source",
+    format: "xlsx",
+    projectId: "bd-optimization-22-04-2026",
+    projectName: "BD Optimization — 22.04.2026",
+    updated: "4 дня назад",
+    updatedAt: "2026-04-22T15:50:00",
+    size: "6,4 МБ",
+  },
+  {
+    id: "lib-semantics-19-04",
+    name: "Семантическое ядро — 19.04.2026.xlsx",
     kind: "result",
     format: "excel",
     productId: "semantics-generator",
-    projectId: "semantics-launch",
-    projectName: "Семантика для нового направления",
+    projectId: "semantics-19-04-2026",
+    projectName: "Сбор семантики — 19.04.2026",
     updated: "неделю назад",
-    updatedAt: "2025-04-18T10:00:00",
+    updatedAt: "2026-04-19T10:00:00",
     size: "1,4 МБ",
-  },
-  {
-    id: "src-gs-ops",
-    name: "Google Sheets — Operations",
-    kind: "source",
-    format: "google-sheets",
-    projectId: "semantics-launch",
-    projectName: "Семантика для нового направления",
-    updated: "неделю назад",
-    updatedAt: "2025-04-18T09:00:00",
   },
 ];
 
 export const formatLabel = (format: LibraryEntry["format"]): string => {
-  if (format === "excel" || format === "dashboard-link" || format === "analytics-report") {
+  if (
+    format === "excel" ||
+    format === "dashboard-link" ||
+    format === "analytics-report"
+  ) {
     return resultFormatLabel[format];
   }
   return sourceFormatLabel[format];
@@ -771,17 +946,21 @@ export const formatLabel = (format: LibraryEntry["format"]): string => {
 
 // ---------- Result actions (per project) ----------
 
+export type ResultActionVariant =
+  | "open-dashboard"
+  | "open-report"
+  | "download-excel"
+  | "none";
+
 export interface ProjectResultAction {
   label: string;
-  variant: "open-dashboard" | "open-report" | "download-excel" | "none";
+  variant: ResultActionVariant;
 }
 
-export const getProjectResultAction = (project: Project): ProjectResultAction => {
-  if (!project.resultLibraryId) {
-    return { label: "Нет результата", variant: "none" };
-  }
-  const product = getProduct(project.productId);
-  switch (product.resultFormat) {
+export const getResultActionForFormat = (
+  format: ResultFormat,
+): ProjectResultAction => {
+  switch (format) {
     case "dashboard-link":
       return { label: "Открыть дашборд", variant: "open-dashboard" };
     case "analytics-report":
@@ -789,6 +968,13 @@ export const getProjectResultAction = (project: Project): ProjectResultAction =>
     case "excel":
       return { label: "Скачать Excel-файл", variant: "download-excel" };
   }
+};
+
+export const getProjectResultAction = (project: Project): ProjectResultAction => {
+  if (!project.currentResult) {
+    return { label: "Нет результата", variant: "none" };
+  }
+  return getResultActionForFormat(project.currentResult.format);
 };
 
 // ---------- Step navigation helpers ----------

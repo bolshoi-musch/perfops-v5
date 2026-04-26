@@ -13,11 +13,11 @@ import { ArrowRight } from "lucide-react";
 export const Route = createFileRoute("/v4/")({
   head: () => ({
     meta: [
-      { title: "PerfOps V4 — Единый продуктовый поток" },
+      { title: "PerfOps — Каталог продуктов" },
       {
         name: "description",
         content:
-          "PerfOps V4 — каталог продуктов performance-маркетинга в едином флоу-фреймворке.",
+          "PerfOps — платформа для performance-маркетинга. Каталог продуктов и проекты в едином флоу.",
       },
     ],
   }),
@@ -32,9 +32,9 @@ function HomePage() {
   return (
     <AppShellV4>
       <PageHeaderV4
-        eyebrow="Каталог продуктов"
-        title="С чего начать"
-        subtitle="Все продукты PerfOps работают в едином флоу: источник, проверка, запуск, результат."
+        eyebrow="С чего начать"
+        title="Главная"
+        subtitle="Выберите продукт и создайте проект. Все продукты работают в едином флоу: источник, проверка, запуск, результат."
       />
 
       <section>

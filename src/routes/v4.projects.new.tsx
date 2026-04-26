@@ -21,7 +21,6 @@ import {
   getProduct,
   type ProductId,
   resultFormatLabel,
-  stepLabel,
 } from "@/lib/perfops-v4-data";
 
 const searchSchema = z.object({
@@ -29,18 +28,28 @@ const searchSchema = z.object({
     .enum([
       "dashboard-builder",
       "campaign-analysis",
+      "semantics-generator",
       "cross-minus",
       "bd-optimization",
-      "semantics-generator",
     ])
     .optional(),
 });
 
 export const Route = createFileRoute("/v4/projects/new")({
-  head: () => ({ meta: [{ title: "Новый проект — PerfOps V4" }] }),
+  head: () => ({ meta: [{ title: "Новый проект — PerfOps" }] }),
   validateSearch: searchSchema,
   component: NewProjectPage,
 });
+
+const today = "26.04.2026";
+
+const exampleNameByProduct: Record<ProductId, string> = {
+  "dashboard-builder": `Конструктор дашбордов — ${today}`,
+  "campaign-analysis": `Анализ кампаний — ${today}`,
+  "semantics-generator": `Сбор семантики — ${today}`,
+  "cross-minus": `Кросс-минусовка — ${today}`,
+  "bd-optimization": `BD Optimization — ${today}`,
+};
 
 function NewProjectPage() {
   const navigate = useNavigate();
@@ -76,7 +85,7 @@ function NewProjectPage() {
       <PageHeaderV4
         eyebrow="Создание"
         title="Новый проект"
-        subtitle="Заполните основные параметры. Источник, подключение и параметры выбираются позже внутри флоу."
+        subtitle="Заполните основные параметры. Источник выбирается на следующем шаге."
       />
 
       <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-3">
@@ -120,7 +129,7 @@ function NewProjectPage() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={`Например: ${product.exampleResultName.replace(".xlsx", "")}`}
+                placeholder={`Например: ${exampleNameByProduct[productId]}`}
                 className="mt-1 h-9"
                 autoFocus
               />
@@ -144,7 +153,7 @@ function NewProjectPage() {
 
             <div className="flex items-center gap-2 border-t pt-4">
               <Button type="submit" disabled={!canSubmit}>
-                Создать проект и перейти к источнику
+                Создать проект
               </Button>
               <Button type="button" variant="ghost" asChild>
                 <Link to="/v4/projects">Отмена</Link>
@@ -162,23 +171,20 @@ function NewProjectPage() {
               <p className="mt-1 text-sm font-medium text-foreground">
                 {resultFormatLabel[product.resultFormat]}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {product.exampleResultSummary}
+              <p className="mt-2 text-xs text-muted-foreground">
+                {product.shortDescription}
               </p>
             </CardContent>
           </Card>
           <Card className="border bg-card shadow-none">
             <CardContent className="p-5">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Дальнейшие шаги
+                Что дальше
               </p>
-              <ol className="mt-2 space-y-1 text-xs text-muted-foreground">
-                {product.steps.map((s, i) => (
-                  <li key={s}>
-                    {i + 1}. {stepLabel[s]}
-                  </li>
-                ))}
-              </ol>
+              <p className="mt-2 text-xs text-muted-foreground">
+                После создания проекта откроется первый шаг — выбор источника.
+                Все настройки можно поменять без потери данных проекта.
+              </p>
             </CardContent>
           </Card>
         </div>
