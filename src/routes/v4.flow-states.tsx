@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/v4/flow-states")({
-  head: () => ({ meta: [{ title: "Справочник состояний — PerfOps V4" }] }),
+  head: () => ({ meta: [{ title: "Справочник состояний — PerfOps" }] }),
   component: FlowStatesPage,
 });
 
@@ -36,12 +36,12 @@ interface StateDef {
 }
 
 const toneStyles: Record<Tone, { dot: string; chip: string; label: string }> = {
-  neutral: { dot: "bg-muted-foreground/40", chip: "bg-muted text-muted-foreground border-border", label: "Нейтральное" },
-  info: { dot: "bg-info", chip: "bg-info-soft text-info border-info/30", label: "Информационное" },
-  success: { dot: "bg-success", chip: "bg-success-soft text-success border-success/30", label: "Успешное" },
-  warning: { dot: "bg-warning", chip: "bg-warning-soft text-warning-foreground border-warning/30", label: "Предупреждение" },
-  blocked: { dot: "bg-destructive", chip: "bg-destructive-soft text-destructive border-destructive/30", label: "Блокирующее" },
-  processing: { dot: "bg-primary", chip: "bg-accent text-accent-foreground border-primary/30", label: "В процессе" },
+  neutral: { dot: "bg-muted-foreground/40", chip: "bg-muted text-muted-foreground border-border", label: "neutral" },
+  info: { dot: "bg-info", chip: "bg-info-soft text-info border-info/30", label: "info" },
+  success: { dot: "bg-success", chip: "bg-success-soft text-success border-success/30", label: "success" },
+  warning: { dot: "bg-warning", chip: "bg-warning-soft text-warning-foreground border-warning/30", label: "warning" },
+  blocked: { dot: "bg-destructive", chip: "bg-destructive-soft text-destructive border-destructive/30", label: "blocked" },
+  processing: { dot: "bg-primary", chip: "bg-accent text-accent-foreground border-primary/30", label: "processing" },
 };
 
 const states: StateDef[] = [
@@ -49,7 +49,8 @@ const states: StateDef[] = [
     id: "idle-upload",
     name: "Загрузка — ожидание",
     tone: "neutral",
-    description: "Источник ещё не выбран. Пользователь может загрузить файл, выбрать подключение или источник из Библиотеки.",
+    description:
+      "Источник ещё не выбран. Пользователь может загрузить файл, выбрать подключённый аккаунт или источник из Библиотеки.",
     example: (
       <div className="rounded-md border border-dashed bg-surface px-4 py-6 text-center">
         <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
@@ -111,7 +112,8 @@ const states: StateDef[] = [
     id: "warning",
     name: "Предупреждение",
     tone: "warning",
-    description: "Источник можно использовать, но есть риски — запуск разрешён с предупреждением.",
+    description:
+      "Источник можно использовать, но есть риски. Запуск разрешён, основная кнопка остаётся «Запустить».",
     example: (
       <div className="rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm">
         <p className="flex items-center gap-2 font-medium text-warning-foreground">
@@ -127,7 +129,8 @@ const states: StateDef[] = [
     id: "blocked",
     name: "Блокировка",
     tone: "blocked",
-    description: "Запуск невозможен из-за внешней причины: подключение, лимит, недоступность сервиса.",
+    description:
+      "Запуск невозможен из-за внешней причины: подключение, лимит, недоступность сервиса.",
     example: (
       <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm">
         <p className="flex items-center gap-2 font-medium text-destructive">
@@ -145,7 +148,7 @@ const states: StateDef[] = [
     example: (
       <div className="flex items-center gap-3 rounded-md border bg-accent px-3 py-2 text-sm">
         <Loader2 className="h-4 w-4 animate-spin text-primary" />
-        <span className="text-foreground">Кросс-минусовка — апрель: формирование файла…</span>
+        <span className="text-foreground">Кросс-минусовка: формирование файла…</span>
       </div>
     ),
   },
@@ -153,13 +156,13 @@ const states: StateDef[] = [
     id: "local-result",
     name: "Локальный результат готов",
     tone: "info",
-    description: "Артефакт рассчитан, но ещё не сохранён в Библиотеке проекта.",
+    description: "Артефакт рассчитан, но ещё не сохранён в Библиотеке.",
     example: (
       <div className="flex items-center gap-3 rounded-md border bg-surface px-3 py-2 text-sm">
         <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-        <span className="flex-1 text-foreground">Кросс-минус — апрель.xlsx</span>
+        <span className="flex-1 text-foreground">Кросс-минус — 25.04.2026.xlsx</span>
         <Button size="sm" variant="outline">
-          <Download className="h-3 w-3" /> Скачать локальный результат
+          <Download className="h-3 w-3" /> Скачать локальную копию
         </Button>
       </div>
     ),
@@ -168,67 +171,69 @@ const states: StateDef[] = [
     id: "result-saved",
     name: "Результат сохранён в Библиотеке",
     tone: "success",
-    description: "Результат успешно зарегистрирован в проекте и доступен команде.",
+    description: "Результат успешно сохранён в Библиотеке и доступен команде.",
     example: (
       <div className="rounded-md border border-success/30 bg-success-soft px-3 py-2 text-sm">
         <p className="flex items-center gap-2 font-medium text-success">
-          <CheckCircle2 className="h-4 w-4" /> Результат сохранён в Библиотеке проекта
+          <CheckCircle2 className="h-4 w-4" /> Результат сохранён в Библиотеке
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <Button size="sm">
             <ExternalLink className="h-3 w-3" /> Открыть результат
           </Button>
-          <Button size="sm" variant="outline">Открыть библиотеку</Button>
+          <Button size="sm" variant="outline">Открыть Библиотеку</Button>
         </div>
       </div>
     ),
   },
   {
-    id: "registration-degraded",
-    name: "Регистрация результата деградирована",
+    id: "result-not-saved",
+    name: "Результат готов, но не сохранён в Библиотеке",
     tone: "warning",
-    description: "Результат готов локально, но пока не сохранён в Библиотеке проекта.",
+    description:
+      "Результат рассчитан, но не сохранён в Библиотеке. Можно повторить сохранение или скачать локальную копию.",
     example: (
       <div className="rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm">
         <p className="flex items-center gap-2 font-medium text-warning-foreground">
-          <Info className="h-4 w-4" /> Результат готов локально, но пока не сохранён в Библиотеке проекта.
+          <Info className="h-4 w-4" /> Результат готов, но не сохранён в Библиотеке.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <Button size="sm">
-            <RotateCcw className="h-3 w-3" /> Повторить регистрацию
+            <RotateCcw className="h-3 w-3" /> Повторить сохранение
           </Button>
           <Button size="sm" variant="outline">
-            <Download className="h-3 w-3" /> Скачать локальный результат
+            <Download className="h-3 w-3" /> Скачать локальную копию
           </Button>
         </div>
       </div>
     ),
   },
   {
-    id: "registration-retry",
-    name: "Регистрация результата — повторная попытка",
+    id: "save-retry",
+    name: "Повторное сохранение",
     tone: "processing",
-    description: "Платформа пытается заново зарегистрировать готовый результат в Библиотеке.",
+    description: "Платформа повторно пытается сохранить готовый результат в Библиотеке.",
     example: (
       <div className="flex items-center gap-2 rounded-md border bg-accent px-3 py-2 text-sm">
         <Loader2 className="h-4 w-4 animate-spin text-primary" />
-        <span className="text-foreground">Повторная регистрация результата… (попытка 2 из 3)</span>
+        <span className="text-foreground">Повторное сохранение результата… (попытка 2 из 3)</span>
       </div>
     ),
   },
   {
-    id: "registration-failed",
-    name: "Регистрация результата не удалась",
+    id: "save-failed",
+    name: "Сохранить результат не удалось",
     tone: "blocked",
-    description: "Терминальная ошибка регистрации. Локальный результат можно скачать, далее — в поддержку.",
+    description:
+      "Терминальная ошибка сохранения. Локальную копию можно скачать, далее — обращение в поддержку.",
     example: (
       <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm">
         <p className="flex items-center gap-2 font-medium text-destructive">
-          <XCircle className="h-4 w-4" /> Не удалось зарегистрировать результат в Библиотеке
+          <XCircle className="h-4 w-4" /> Не удалось сохранить результат в Библиотеке
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <Button size="sm" variant="outline">
-            <Download className="h-3 w-3" /> Скачать локальный результат
+            <Download className="h-3 w-3" /> Скачать локальную копию
           </Button>
           <Button size="sm" variant="ghost">
             <LifeBuoy className="h-3 w-3" /> Связаться с поддержкой
@@ -243,9 +248,9 @@ function FlowStatesPage() {
   return (
     <AppShellV4>
       <PageHeaderV4
-        eyebrow="Справочник"
+        eyebrow="Внутренний справочник"
         title="Справочник состояний"
-        subtitle="Все состояния продуктовых сценариев — от ожидания загрузки до регистрации результата."
+        subtitle="Состояния продуктовых сценариев — от выбора источника до сохранения результата в Библиотеке."
       />
       <div className="grid gap-3 lg:grid-cols-2">
         {states.map((s) => {
@@ -263,7 +268,7 @@ function FlowStatesPage() {
                   </div>
                   <span
                     className={cn(
-                      "inline-flex shrink-0 items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                      "inline-flex shrink-0 items-center rounded-md border px-1.5 py-0.5 text-[10px] font-mono lowercase",
                       tone.chip,
                     )}
                   >
