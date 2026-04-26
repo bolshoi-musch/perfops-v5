@@ -3,12 +3,17 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { Product, StepId } from "@/lib/perfops-v4-data";
-import { stepLabel, getNextStep, getPrevStep } from "@/lib/perfops-v4-data";
+import { stepLabel } from "@/lib/perfops-v4-data";
 
 interface FlowActionBarProps {
   product: Product;
+  /** Effective step list (may differ from product.steps when optional steps
+   *  like "combining" are hidden). Used to compute prev/next. */
+  steps: StepId[];
   current: StepId;
   projectId: string;
+  /** Search params to preserve across step navigation (e.g. ?second=1). */
+  search?: Record<string, unknown>;
   /** Override default Continue label. */
   nextLabel?: string;
   /** Disable the Continue action. */
@@ -21,15 +26,18 @@ interface FlowActionBarProps {
 
 export function FlowActionBar({
   product,
+  steps,
   current,
   projectId,
+  search,
   nextLabel,
   nextDisabled,
   nextSlot,
   middleSlot,
 }: FlowActionBarProps) {
-  const next = getNextStep(product, current);
-  const prev = getPrevStep(product, current);
+  const idx = steps.indexOf(current);
+  const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : undefined;
+  const prev = idx > 0 ? steps[idx - 1] : undefined;
 
   const computedNextLabel =
     nextLabel ?? (next ? `Далее: ${stepLabel[next]}` : "Готово");
@@ -42,6 +50,7 @@ export function FlowActionBar({
             <Link
               to="/v4/run/$productId/$step"
               params={{ productId: product.id, step: prev }}
+              search={search}
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Назад
             </Link>
@@ -63,6 +72,7 @@ export function FlowActionBar({
                 <Link
                   to="/v4/run/$productId/$step"
                   params={{ productId: product.id, step: next }}
+                  search={search}
                 >
                   {computedNextLabel} <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
