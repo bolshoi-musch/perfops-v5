@@ -62,7 +62,6 @@ function ConnectionDetailPage() {
             <thead className="border-b bg-surface text-left text-xs text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 font-medium">Аккаунт</th>
-                <th className="px-3 py-2 font-medium">Идентификатор</th>
                 <th className="px-3 py-2 font-medium">Статус</th>
                 <th className="px-3 py-2 font-medium">Последняя синхронизация</th>
                 <th className="px-3 py-2 font-medium" />
@@ -71,11 +70,9 @@ function ConnectionDetailPage() {
             <tbody className="divide-y">
               {connection.accounts.map((a) => (
                 <tr key={a.id} className="hover:bg-surface">
-                  <td className="px-3 py-2.5 align-middle text-sm font-medium text-foreground">
-                    {a.name}
-                  </td>
-                  <td className="px-3 py-2.5 align-middle text-xs text-muted-foreground">
-                    {a.identifier}
+                  <td className="px-3 py-2.5 align-top">
+                    <div className="text-sm font-medium text-foreground">{a.name}</div>
+                    <div className="text-xs text-muted-foreground">{a.identifier}</div>
                   </td>
                   <td className="px-3 py-2.5 align-middle">
                     <span

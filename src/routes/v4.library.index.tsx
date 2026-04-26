@@ -67,32 +67,25 @@ function LibraryPage() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Поиск по записям"
-            className="h-8 pl-8 text-sm"
+            placeholder="Поиск по объектам"
+            className="h-9 pl-8 text-sm"
           />
         </div>
-        <div className="inline-flex h-8 rounded-md border bg-card p-0.5 text-xs">
-          {(["all", "source", "result"] as const).map((k) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => setKind(k)}
-              className={cn(
-                "rounded-[5px] px-3 text-xs font-medium transition-colors",
-                kind === k
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {k === "all" ? "Все" : libraryKindLabel[k] + "и"}
-            </button>
-          ))}
-        </div>
+        <Select value={kind} onValueChange={(v) => setKind(v as LibraryEntryKind | "all")}>
+          <SelectTrigger className="h-9 w-40 text-sm">
+            <SelectValue placeholder="Тип" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Все</SelectItem>
+            <SelectItem value="source">Источники</SelectItem>
+            <SelectItem value="result">Результаты</SelectItem>
+          </SelectContent>
+        </Select>
         <Select
           value={productFilter}
           onValueChange={(v) => setProductFilter(v as ProductId | "all")}
         >
-          <SelectTrigger className="h-8 w-56 text-sm">
+          <SelectTrigger className="h-9 w-56 text-sm">
             <SelectValue placeholder="Продукт" />
           </SelectTrigger>
           <SelectContent>
@@ -113,7 +106,7 @@ function LibraryPage() {
         <table className="w-full text-sm">
           <thead className="border-b bg-surface text-left text-xs text-muted-foreground">
             <tr>
-              <th className="px-3 py-2 font-medium">Запись</th>
+              <th className="px-3 py-2 font-medium">Объект</th>
               <th className="px-3 py-2 font-medium">Тип</th>
               <th className="px-3 py-2 font-medium">Формат</th>
               <th className="px-3 py-2 font-medium">Проект</th>
@@ -150,7 +143,7 @@ function LibraryPage() {
                       className={cn(
                         "inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium",
                         e.kind === "source"
-                          ? "border-info/30 bg-info-soft text-info-foreground/80"
+                          ? "border-info/30 bg-info-soft text-info"
                           : "border-success/30 bg-success-soft text-success",
                       )}
                     >
