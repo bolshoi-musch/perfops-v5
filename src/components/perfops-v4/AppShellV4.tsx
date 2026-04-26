@@ -141,30 +141,11 @@ function Sidebar({
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <ul className="space-y-0.5">
-          {primaryNav.map((item) => {
-            const Icon = item.icon;
-            const active = item.exact
-              ? path === item.to
-              : path === item.to || path.startsWith(item.to + "/");
-            return (
-              <li key={item.to}>
-                <Link
-                  to={item.to}
-                  title={collapsed ? item.label : undefined}
-                  className={cn(
-                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
-                    active
-                      ? "bg-accent text-accent-foreground"
-                      : "text-foreground/80 hover:bg-muted hover:text-foreground",
-                    collapsed && "justify-center px-0",
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                </Link>
-              </li>
-            );
-          })}
+          <NavRow item={homeNav} path={path} collapsed={collapsed} />
+          <ProductsNavGroup path={path} collapsed={collapsed} />
+          {afterProductsNav.map((item) => (
+            <NavRow key={item.to} item={item} path={path} collapsed={collapsed} />
+          ))}
         </ul>
 
         <div className="mt-6">
