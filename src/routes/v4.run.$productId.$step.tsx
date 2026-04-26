@@ -239,7 +239,15 @@ function StepBody({
 
 // --------------------- Scenario (semantics) ---------------------
 
-function ScenarioStep({ product, projectId }: { product: Product; projectId: string }) {
+function ScenarioStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
   const [scenario, setScenario] = useState<string>("balanced");
   const groups: SemanticsScenarioGroup[] = ["collection", "research", "processing"];
   return (
@@ -287,7 +295,12 @@ function ScenarioStep({ product, projectId }: { product: Product; projectId: str
         ]}
       />
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="scenario" projectId={projectId} />
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="scenario"
+          projectId={projectId}
+        />
       </div>
     </div>
   );
