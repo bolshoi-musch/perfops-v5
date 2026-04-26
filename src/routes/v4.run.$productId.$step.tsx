@@ -1397,7 +1397,7 @@ function RunStep({
 
 // --------------------- Result ---------------------
 
-function ResultStep({ product, projectId }: { product: Product; projectId: string }) {
+function ResultStep({ product, projectId, steps: _steps }: { product: Product; projectId: string; steps: StepId[] }) {
   const PrimaryIcon =
     product.resultFormat === "excel"
       ? Download
