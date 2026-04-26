@@ -70,6 +70,7 @@ const stepSchema = z.enum([
 
 // Search params for the runner — currently just whether a second source is
 // active (drives the dynamic "Объединение" step in the stepper).
+type RunnerSearch = { second?: number };
 const searchSchema = z.object({
   second: z.coerce.number().optional(),
 });
@@ -82,7 +83,7 @@ export const Route = createFileRoute("/v4/run/$productId/$step")({
     productId: String(raw.productId),
     step: stepSchema.parse(raw.step),
   }),
-  validateSearch: (raw) => searchSchema.parse(raw),
+  validateSearch: (raw): RunnerSearch => searchSchema.parse(raw),
   component: FlowRunnerPage,
 });
 
