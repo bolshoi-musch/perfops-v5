@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
   getProduct,
+  products,
   projects,
   resultFormatLabel,
   semanticsScenarios,
@@ -24,12 +25,15 @@ import {
   metricGroupLabel,
   connectionTypes,
   libraryEntries,
+  libraryKindLabel,
+  formatLabel,
   sourceKindLabel,
   type Product,
   type StepId,
   type SourceKind,
   type SemanticsScenarioGroup,
   type MetricGroup,
+  type LibraryEntry,
   stepLabel,
   getNextStep,
 } from "@/lib/perfops-v4-data";
@@ -49,6 +53,8 @@ import {
   ArrowRight,
   Plus,
   X,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 
 const stepSchema = z.enum([
