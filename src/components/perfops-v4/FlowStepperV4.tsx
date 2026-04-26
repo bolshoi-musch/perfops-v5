@@ -9,6 +9,8 @@ interface FlowStepperV4Props {
   current: StepId;
 }
 
+const optionalSteps: StepId[] = ["combining"];
+
 export function FlowStepperV4({ product, current }: FlowStepperV4Props) {
   const currentIndex = product.steps.indexOf(current);
 
@@ -17,6 +19,7 @@ export function FlowStepperV4({ product, current }: FlowStepperV4Props) {
       {product.steps.map((step, i) => {
         const done = i < currentIndex;
         const active = i === currentIndex;
+        const optional = optionalSteps.includes(step);
         const clickable = done; // completed steps are clickable
         const label = stepLabel[step];
 
@@ -27,7 +30,11 @@ export function FlowStepperV4({ product, current }: FlowStepperV4Props) {
                 "flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-medium transition-colors",
                 done && "border-primary bg-primary text-primary-foreground",
                 active && "border-primary bg-card text-primary",
-                !done && !active && "border-border bg-card text-muted-foreground",
+                !done &&
+                  !active &&
+                  (optional
+                    ? "border-dashed border-border bg-card text-muted-foreground"
+                    : "border-border bg-card text-muted-foreground"),
               )}
             >
               {done ? <Check className="h-3 w-3" /> : i + 1}
@@ -40,6 +47,11 @@ export function FlowStepperV4({ product, current }: FlowStepperV4Props) {
               )}
             >
               {label}
+              {optional && !active && !done && (
+                <span className="ml-1 text-[10px] text-muted-foreground/70">
+                  (опц.)
+                </span>
+              )}
             </span>
           </div>
         );
