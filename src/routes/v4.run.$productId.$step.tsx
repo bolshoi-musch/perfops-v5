@@ -393,17 +393,15 @@ function SourcePanel({
   hasFile,
   onAttachFile,
   onClearFile,
-  secondary,
 }: {
   kind: SourceKind;
   product: Product;
   hasFile: boolean;
   onAttachFile: () => void;
   onClearFile: () => void;
-  secondary?: boolean;
 }) {
   if (kind === "upload") {
-    if (hasFile && !secondary) {
+    if (hasFile) {
       return (
         <div className="flex items-center justify-between gap-3 rounded-md border bg-success-soft px-3 py-2.5 text-sm">
           <div className="flex min-w-0 items-center gap-2">
