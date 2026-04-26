@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { AppShellV4 } from "@/components/perfops-v4/AppShellV4";
 import { PageHeaderV4 } from "@/components/perfops-v4/PageHeaderV4";
