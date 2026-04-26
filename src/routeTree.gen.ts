@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as V5RouteImport } from './routes/v5'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as FlowStatesRouteImport } from './routes/flow-states'
@@ -17,6 +18,7 @@ import { Route as ComponentsRouteImport } from './routes/components'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as V4IndexRouteImport } from './routes/v4.index'
 import { Route as V3IndexRouteImport } from './routes/v3.index'
+import { Route as V5SplatRouteImport } from './routes/v5.$'
 import { Route as V4FlowStatesRouteImport } from './routes/v4.flow-states'
 import { Route as V4ComponentsRouteImport } from './routes/v4.components'
 import { Route as V3FlowStatesRouteImport } from './routes/v3.flow-states'
@@ -55,6 +57,11 @@ import { Route as V3ToolsProductIdReviewRouteImport } from './routes/v3.tools.$p
 import { Route as V3ToolsProductIdResultRouteImport } from './routes/v3.tools.$productId.result'
 import { Route as V3ToolsProductIdProcessingRouteImport } from './routes/v3.tools.$productId.processing'
 
+const V5Route = V5RouteImport.update({
+  id: '/v5',
+  path: '/v5',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectsRoute = ProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
@@ -94,6 +101,11 @@ const V3IndexRoute = V3IndexRouteImport.update({
   id: '/v3/',
   path: '/v3/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const V5SplatRoute = V5SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => V5Route,
 } as any)
 const V4FlowStatesRoute = V4FlowStatesRouteImport.update({
   id: '/v4/flow-states',
@@ -289,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/flow-states': typeof FlowStatesRoute
   '/library': typeof LibraryRoute
   '/projects': typeof ProjectsRouteWithChildren
+  '/v5': typeof V5RouteWithChildren
   '/connections/$typeId': typeof ConnectionsTypeIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/tools/$toolId': typeof ToolsToolIdRouteWithChildren
@@ -296,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/v3/flow-states': typeof V3FlowStatesRoute
   '/v4/components': typeof V4ComponentsRoute
   '/v4/flow-states': typeof V4FlowStatesRoute
+  '/v5/$': typeof V5SplatRoute
   '/v3/': typeof V3IndexRoute
   '/v4/': typeof V4IndexRoute
   '/tools/$toolId/about': typeof ToolsToolIdAboutRoute
@@ -336,6 +350,7 @@ export interface FileRoutesByTo {
   '/flow-states': typeof FlowStatesRoute
   '/library': typeof LibraryRoute
   '/projects': typeof ProjectsRouteWithChildren
+  '/v5': typeof V5RouteWithChildren
   '/connections/$typeId': typeof ConnectionsTypeIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/tools/$toolId': typeof ToolsToolIdRouteWithChildren
@@ -343,6 +358,7 @@ export interface FileRoutesByTo {
   '/v3/flow-states': typeof V3FlowStatesRoute
   '/v4/components': typeof V4ComponentsRoute
   '/v4/flow-states': typeof V4FlowStatesRoute
+  '/v5/$': typeof V5SplatRoute
   '/v3': typeof V3IndexRoute
   '/v4': typeof V4IndexRoute
   '/tools/$toolId/about': typeof ToolsToolIdAboutRoute
@@ -384,6 +400,7 @@ export interface FileRoutesById {
   '/flow-states': typeof FlowStatesRoute
   '/library': typeof LibraryRoute
   '/projects': typeof ProjectsRouteWithChildren
+  '/v5': typeof V5RouteWithChildren
   '/connections/$typeId': typeof ConnectionsTypeIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/tools/$toolId': typeof ToolsToolIdRouteWithChildren
@@ -391,6 +408,7 @@ export interface FileRoutesById {
   '/v3/flow-states': typeof V3FlowStatesRoute
   '/v4/components': typeof V4ComponentsRoute
   '/v4/flow-states': typeof V4FlowStatesRoute
+  '/v5/$': typeof V5SplatRoute
   '/v3/': typeof V3IndexRoute
   '/v4/': typeof V4IndexRoute
   '/tools/$toolId/about': typeof ToolsToolIdAboutRoute
@@ -433,6 +451,7 @@ export interface FileRouteTypes {
     | '/flow-states'
     | '/library'
     | '/projects'
+    | '/v5'
     | '/connections/$typeId'
     | '/projects/$projectId'
     | '/tools/$toolId'
@@ -440,6 +459,7 @@ export interface FileRouteTypes {
     | '/v3/flow-states'
     | '/v4/components'
     | '/v4/flow-states'
+    | '/v5/$'
     | '/v3/'
     | '/v4/'
     | '/tools/$toolId/about'
@@ -480,6 +500,7 @@ export interface FileRouteTypes {
     | '/flow-states'
     | '/library'
     | '/projects'
+    | '/v5'
     | '/connections/$typeId'
     | '/projects/$projectId'
     | '/tools/$toolId'
@@ -487,6 +508,7 @@ export interface FileRouteTypes {
     | '/v3/flow-states'
     | '/v4/components'
     | '/v4/flow-states'
+    | '/v5/$'
     | '/v3'
     | '/v4'
     | '/tools/$toolId/about'
@@ -527,6 +549,7 @@ export interface FileRouteTypes {
     | '/flow-states'
     | '/library'
     | '/projects'
+    | '/v5'
     | '/connections/$typeId'
     | '/projects/$projectId'
     | '/tools/$toolId'
@@ -534,6 +557,7 @@ export interface FileRouteTypes {
     | '/v3/flow-states'
     | '/v4/components'
     | '/v4/flow-states'
+    | '/v5/$'
     | '/v3/'
     | '/v4/'
     | '/tools/$toolId/about'
@@ -575,6 +599,7 @@ export interface RootRouteChildren {
   FlowStatesRoute: typeof FlowStatesRoute
   LibraryRoute: typeof LibraryRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
+  V5Route: typeof V5RouteWithChildren
   ToolsToolIdRoute: typeof ToolsToolIdRouteWithChildren
   V3ComponentsRoute: typeof V3ComponentsRoute
   V3FlowStatesRoute: typeof V3FlowStatesRoute
@@ -607,6 +632,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/v5': {
+      id: '/v5'
+      path: '/v5'
+      fullPath: '/v5'
+      preLoaderRoute: typeof V5RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projects': {
       id: '/projects'
       path: '/projects'
@@ -662,6 +694,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/v3/'
       preLoaderRoute: typeof V3IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/v5/$': {
+      id: '/v5/$'
+      path: '/$'
+      fullPath: '/v5/$'
+      preLoaderRoute: typeof V5SplatRouteImport
+      parentRoute: typeof V5Route
     }
     '/v4/flow-states': {
       id: '/v4/flow-states'
@@ -949,6 +988,16 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
   ProjectsRouteChildren,
 )
 
+interface V5RouteChildren {
+  V5SplatRoute: typeof V5SplatRoute
+}
+
+const V5RouteChildren: V5RouteChildren = {
+  V5SplatRoute: V5SplatRoute,
+}
+
+const V5RouteWithChildren = V5Route._addFileChildren(V5RouteChildren)
+
 interface ToolsToolIdRouteChildren {
   ToolsToolIdAboutRoute: typeof ToolsToolIdAboutRoute
   ToolsToolIdBlockedRoute: typeof ToolsToolIdBlockedRoute
@@ -984,6 +1033,7 @@ const rootRouteChildren: RootRouteChildren = {
   FlowStatesRoute: FlowStatesRoute,
   LibraryRoute: LibraryRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
+  V5Route: V5RouteWithChildren,
   ToolsToolIdRoute: ToolsToolIdRouteWithChildren,
   V3ComponentsRoute: V3ComponentsRoute,
   V3FlowStatesRoute: V3FlowStatesRoute,
