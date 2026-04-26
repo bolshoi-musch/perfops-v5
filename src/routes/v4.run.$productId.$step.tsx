@@ -68,6 +68,12 @@ const stepSchema = z.enum([
   "result",
 ]);
 
+// Search params for the runner — currently just whether a second source is
+// active (drives the dynamic "Объединение" step in the stepper).
+const searchSchema = z.object({
+  second: z.coerce.number().optional(),
+});
+
 export const Route = createFileRoute("/v4/run/$productId/$step")({
   head: ({ params }) => ({
     meta: [{ title: `${stepLabel[params.step as StepId] ?? "Шаг"} — PerfOps` }],
@@ -76,18 +82,45 @@ export const Route = createFileRoute("/v4/run/$productId/$step")({
     productId: String(raw.productId),
     step: stepSchema.parse(raw.step),
   }),
+  validateSearch: (raw) => searchSchema.parse(raw),
   component: FlowRunnerPage,
 });
 
+/**
+ * Build the effective step list shown to the user.
+ *
+ * Note (UI prototype): step composition is currently derived inline from
+ * `product.steps` plus a runtime flag (second source). When the platform
+ * gains real product configuration, this should move into a per-product
+ * config / loader so the first step (and presence of optional steps like
+ * "combining") is determined by the product, not by hard-coded routing.
+ */
+function getEffectiveSteps(product: Product, hasSecondSource: boolean): StepId[] {
+  if (!product.supportsCombining) return product.steps;
+  if (hasSecondSource) return product.steps;
+  return product.steps.filter((s) => s !== "combining");
+}
+
 function FlowRunnerPage() {
   const params = Route.useParams();
+  const search = Route.useSearch();
   const productId = params.productId;
   const step = params.step as StepId;
   const product = getProduct(productId);
   if (!product.steps.includes(step)) {
     throw notFound();
   }
+  const hasSecondSource = search.second === 1;
+  const effectiveSteps = getEffectiveSteps(product, hasSecondSource);
+
+  // If the URL points to "combining" but no second source is active, the
+  // step does not exist in the current flow — bounce back to source.
+  if (step === "combining" && !effectiveSteps.includes("combining")) {
+    throw notFound();
+  }
+
   const project = projects.find((p) => p.productId === productId) ?? projects[0];
+  const navSearch = hasSecondSource ? { second: 1 } : {};
 
   return (
     <AppShellV4>
@@ -101,8 +134,19 @@ function FlowRunnerPage() {
         title={titleFor(step, product)}
         subtitle={subtitleFor(step, product)}
       />
-      <FlowStepperV4 product={product} current={step} />
-      <StepBody product={product} step={step} projectId={project.id} />
+      <FlowStepperV4
+        product={product}
+        steps={effectiveSteps}
+        current={step}
+        search={navSearch}
+      />
+      <StepBody
+        product={product}
+        step={step}
+        projectId={project.id}
+        steps={effectiveSteps}
+        hasSecondSource={hasSecondSource}
+      />
     </AppShellV4>
   );
 }
@@ -137,7 +181,7 @@ function subtitleFor(step: StepId, product: Product): string | undefined {
     case "source":
       return "Поведение и набор источников зависят от продукта.";
     case "combining":
-      return "Если добавлено два источника — выберите план объединения.";
+      return "Выберите план объединения двух источников.";
     case "params":
       return "Параметры можно изменить позже без потери источника.";
     case "metrics":
@@ -156,28 +200,39 @@ function StepBody({
   product,
   step,
   projectId,
+  steps,
+  hasSecondSource,
 }: {
   product: Product;
   step: StepId;
   projectId: string;
+  steps: StepId[];
+  hasSecondSource: boolean;
 }) {
   switch (step) {
     case "scenario":
-      return <ScenarioStep product={product} projectId={projectId} />;
+      return <ScenarioStep product={product} projectId={projectId} steps={steps} />;
     case "source":
-      return <SourceStep product={product} projectId={projectId} />;
+      return (
+        <SourceStep
+          product={product}
+          projectId={projectId}
+          steps={steps}
+          hasSecondSource={hasSecondSource}
+        />
+      );
     case "combining":
-      return <CombiningStep product={product} projectId={projectId} />;
+      return <CombiningStep product={product} projectId={projectId} steps={steps} />;
     case "params":
-      return <ParamsStep product={product} projectId={projectId} />;
+      return <ParamsStep product={product} projectId={projectId} steps={steps} />;
     case "metrics":
-      return <MetricsStep product={product} projectId={projectId} />;
+      return <MetricsStep product={product} projectId={projectId} steps={steps} />;
     case "check":
-      return <CheckStep product={product} projectId={projectId} />;
+      return <CheckStep product={product} projectId={projectId} steps={steps} />;
     case "run":
-      return <RunStep product={product} projectId={projectId} />;
+      return <RunStep product={product} projectId={projectId} steps={steps} />;
     case "result":
-      return <ResultStep product={product} projectId={projectId} />;
+      return <ResultStep product={product} projectId={projectId} steps={steps} />;
   }
 }
 
