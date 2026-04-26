@@ -834,7 +834,7 @@ function PlanRow({
         <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>
       </div>
       {badge && (
-        <span className="shrink-0 rounded-md border border-info/30 bg-info-soft px-1.5 py-0.5 text-[10px] font-medium text-info-foreground">
+        <span className="shrink-0 rounded-md border border-info/30 bg-info-soft px-1.5 py-0.5 text-[10px] font-medium text-info">
           {badge}
         </span>
       )}
