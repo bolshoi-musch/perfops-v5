@@ -1376,6 +1376,7 @@ function RunStep({
       <div className="lg:col-span-3">
         <FlowActionBar
           product={product}
+          steps={steps}
           current="run"
           projectId={projectId}
           nextSlot={
