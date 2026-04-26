@@ -18,14 +18,18 @@ import {
   getProduct,
   projects,
   resultFormatLabel,
-  semanticsModes,
+  semanticsScenarios,
+  semanticsScenarioGroupLabel,
   metricsCatalog,
+  metricGroupLabel,
   connectionTypes,
   libraryEntries,
   sourceKindLabel,
   type Product,
   type StepId,
   type SourceKind,
+  type SemanticsScenarioGroup,
+  type MetricGroup,
   stepLabel,
   getNextStep,
 } from "@/lib/perfops-v4-data";
@@ -48,11 +52,11 @@ import {
 } from "lucide-react";
 
 const stepSchema = z.enum([
-  "mode",
+  "scenario",
   "source",
-  "merge",
+  "combining",
   "params",
-  "metrics-focus",
+  "metrics",
   "check",
   "run",
   "result",
@@ -60,7 +64,7 @@ const stepSchema = z.enum([
 
 export const Route = createFileRoute("/v4/run/$productId/$step")({
   head: ({ params }) => ({
-    meta: [{ title: `${stepLabel[params.step as StepId] ?? "Шаг"} — PerfOps V4` }],
+    meta: [{ title: `${stepLabel[params.step as StepId] ?? "Шаг"} — PerfOps` }],
   }),
   parseParams: (raw) => ({
     productId: String(raw.productId),
@@ -77,9 +81,7 @@ function FlowRunnerPage() {
   if (!product.steps.includes(step)) {
     throw notFound();
   }
-  // Demo project association — first project that uses this product
   const project = projects.find((p) => p.productId === productId) ?? projects[0];
-
   const stepIndex = product.steps.indexOf(step);
 
   return (
@@ -96,7 +98,6 @@ function FlowRunnerPage() {
         subtitle={subtitleFor(step, product)}
       />
       <FlowStepperV4 product={product} current={step} />
-
       <StepBody product={product} step={step} projectId={project.id} />
     </AppShellV4>
   );
@@ -104,47 +105,48 @@ function FlowRunnerPage() {
 
 function titleFor(step: StepId, product: Product): string {
   switch (step) {
-    case "mode":
-      return "Выберите режим";
+    case "scenario":
+      return "Выберите сценарий";
     case "source":
       return "Выберите источник";
-    case "merge":
+    case "combining":
       return "Объединение источников";
     case "params":
-      return "Параметры запуска";
-    case "metrics-focus":
+      return "Параметры";
+    case "metrics":
       return "Метрики и фокус анализа";
     case "check":
       return "Проверка перед запуском";
     case "run":
       return "Идёт обработка";
     case "result":
-      return `Результат: ${product.resultName.toLowerCase()}`;
+      return `Результат готов`;
   }
+  // Defensive: unreachable
+  return product.name;
 }
 
 function subtitleFor(step: StepId, product: Product): string | undefined {
   switch (step) {
-    case "mode":
-      return "Режим определяет, как продукт обработает источник.";
+    case "scenario":
+      return "Сценарий определяет дальнейшие шаги.";
     case "source":
       return "Поведение и набор источников зависят от продукта.";
-    case "merge":
+    case "combining":
       return "Если добавлено два источника — выберите план объединения.";
     case "params":
       return "Параметры можно изменить позже без потери источника.";
-    case "metrics-focus":
+    case "metrics":
       return "Что в первую очередь должно попасть в отчёт.";
     case "check":
       return "Здесь видны источник, параметры и предупреждения. Можно вернуться и исправить.";
     case "run":
-      return "Можно безопасно вернуться позже — результат появится в Библиотеке проекта.";
+      return "Можно безопасно вернуться позже — результат появится в Библиотеке.";
     case "result":
-      return `Сохранён в Библиотеке проекта · ${resultFormatLabel[product.resultFormat]}.`;
+      return `Формат: ${resultFormatLabel[product.resultFormat]}.`;
   }
+  return undefined;
 }
-
-// --------------------- Step body dispatcher ---------------------
 
 function StepBody({
   product,
@@ -156,16 +158,16 @@ function StepBody({
   projectId: string;
 }) {
   switch (step) {
-    case "mode":
-      return <ModeStep product={product} projectId={projectId} />;
+    case "scenario":
+      return <ScenarioStep product={product} projectId={projectId} />;
     case "source":
       return <SourceStep product={product} projectId={projectId} />;
-    case "merge":
-      return <MergeStep product={product} projectId={projectId} />;
+    case "combining":
+      return <CombiningStep product={product} projectId={projectId} />;
     case "params":
       return <ParamsStep product={product} projectId={projectId} />;
-    case "metrics-focus":
-      return <MetricsFocusStep product={product} projectId={projectId} />;
+    case "metrics":
+      return <MetricsStep product={product} projectId={projectId} />;
     case "check":
       return <CheckStep product={product} projectId={projectId} />;
     case "run":
@@ -175,51 +177,57 @@ function StepBody({
   }
 }
 
-// --------------------- Mode (semantics) ---------------------
+// --------------------- Scenario (semantics) ---------------------
 
-function ModeStep({ product, projectId }: { product: Product; projectId: string }) {
-  const [mode, setMode] = useState<string>("balanced");
+function ScenarioStep({ product, projectId }: { product: Product; projectId: string }) {
+  const [scenario, setScenario] = useState<string>("balanced");
+  const groups: SemanticsScenarioGroup[] = ["collection", "research", "processing"];
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
-        <CardContent className="space-y-2 p-5">
-          <p className="text-xs text-muted-foreground">
-            Режим меняет дальнейшие шаги. По умолчанию — «Сбалансированный».
-          </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {semanticsModes.map((m) => {
-              const active = mode === m.id;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setMode(m.id)}
-                  className={cn(
-                    "rounded-md border bg-card px-3 py-2.5 text-left transition-colors",
-                    active
-                      ? "border-primary ring-1 ring-primary/30"
-                      : "hover:border-border-strong",
-                  )}
-                >
-                  <p className="text-sm font-medium text-foreground">{m.name}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{m.description}</p>
-                </button>
-              );
-            })}
-          </div>
+        <CardContent className="space-y-4 p-5">
+          {groups.map((g) => (
+            <div key={g}>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                {semanticsScenarioGroupLabel[g]}
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {semanticsScenarios
+                  .filter((s) => s.group === g)
+                  .map((s) => {
+                    const active = scenario === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setScenario(s.id)}
+                        className={cn(
+                          "rounded-md border bg-card px-3 py-2.5 text-left transition-colors",
+                          active
+                            ? "border-primary ring-1 ring-primary/30"
+                            : "hover:border-border-strong",
+                        )}
+                      >
+                        <p className="text-sm font-medium text-foreground">{s.name}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
       <HelpCard
-        title="Как выбрать режим"
+        title="Как выбрать сценарий"
         items={[
-          "Для нового направления — «Охватный»",
-          "Для регулярных запусков — «Сбалансированный»",
-          "Для чистки и точечных задач — «Консервативный»",
-          "Для группировки готового ядра — «Кластеризация»",
+          "Сбор семантики — собрать ключевые фразы по теме",
+          "Исследование — найти идеи или расширить готовый список",
+          "Обработка — кластеризовать готовое ядро",
         ]}
       />
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="mode" projectId={projectId} />
+        <FlowActionBar product={product} current="scenario" projectId={projectId} />
       </div>
     </div>
   );
@@ -237,9 +245,20 @@ const sourceIcon: Record<SourceKind, typeof Upload> = {
 
 function SourceStep({ product, projectId }: { product: Product; projectId: string }) {
   const [activeKind, setActiveKind] = useState<SourceKind>(product.allowedSources[0]);
-  const [hasFile, setHasFile] = useState(true); // demo: file pre-attached so step preserves data
+  const [secondKind, setSecondKind] = useState<SourceKind>(product.allowedSources[0]);
+  const [hasFile, setHasFile] = useState(true);
   const [secondSourceOpen, setSecondSourceOpen] = useState(false);
-  const supportsMerge = product.steps.includes("merge");
+
+  const sourceHelp: string[] = [
+    `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
+    ...(product.supportedConnections.length > 0
+      ? ["Можно выбрать подключение"]
+      : []),
+    "Можно выбрать источник из Библиотеки",
+    ...(product.supportsSecondSource
+      ? ["Можно добавить второй источник"]
+      : []),
+  ];
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -284,7 +303,7 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
           </CardContent>
         </Card>
 
-        {supportsMerge && (
+        {product.supportsSecondSource && (
           <Card className="border border-dashed bg-card shadow-none">
             <CardContent className="p-5">
               {!secondSourceOpen ? (
@@ -294,11 +313,13 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
                   className="flex w-full items-center justify-between gap-3 rounded-md text-left text-sm text-muted-foreground hover:text-foreground"
                 >
                   <span className="inline-flex items-center gap-2">
-                    <Plus className="h-4 w-4" /> Добавить второй источник для объединения
+                    <Plus className="h-4 w-4" /> Добавить второй источник
                   </span>
-                  <span className="text-xs text-muted-foreground">
-                    На шаге «Объединение» вы выберете план
-                  </span>
+                  {product.supportsCombining && (
+                    <span className="text-xs text-muted-foreground">
+                      На шаге «Объединение» вы выберете план
+                    </span>
+                  )}
                 </button>
               ) : (
                 <div>
@@ -314,8 +335,30 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {product.allowedSources.map((k) => {
+                      const Icon = sourceIcon[k];
+                      const active = secondKind === k;
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setSecondKind(k)}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors",
+                            active
+                              ? "border-primary bg-accent text-accent-foreground"
+                              : "border-border bg-card text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          {sourceKindLabel[k]}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <SourcePanel
-                    kind={activeKind}
+                    kind={secondKind}
                     product={product}
                     hasFile={false}
                     onAttachFile={() => undefined}
@@ -329,7 +372,7 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
         )}
       </div>
 
-      <HelpCard items={product.sourceHelp} />
+      <HelpCard items={sourceHelp} />
 
       <div className="lg:col-span-3">
         <FlowActionBar product={product} current="source" projectId={projectId} />
@@ -360,14 +403,14 @@ function SourcePanel({
           <div className="flex min-w-0 items-center gap-2">
             <FileSpreadsheet className="h-4 w-4 shrink-0 text-success" />
             <span className="truncate font-medium text-foreground">campaign_export.xlsx</span>
-            <span className="text-xs text-muted-foreground">· 412 КБ · принято</span>
+            <span className="text-xs text-muted-foreground">· 412 КБ · принят</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Button size="sm" variant="ghost" onClick={onClearFile}>
               Удалить
             </Button>
             <Button size="sm" variant="outline" onClick={onAttachFile}>
-              Заменить файл
+              Заменить
             </Button>
           </div>
         </div>
@@ -388,30 +431,32 @@ function SourcePanel({
   }
 
   if (kind === "connection") {
-    const conns = connectionTypes.filter((c) =>
-      product.supportedConnections.includes(c.id),
+    const conns = connectionTypes.filter(
+      (c) => product.supportedConnections.includes(c.id) && c.accounts.some((a) => a.status === "connected"),
     );
     return (
       <ul className="divide-y rounded-md border">
         {conns.flatMap((c) =>
-          c.accounts.map((a) => (
-            <li
-              key={a.id}
-              className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-surface"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm text-foreground">{a.name}</p>
-                <p className="truncate text-[11px] text-muted-foreground">
-                  {c.name} · {a.identifier}
-                </p>
-              </div>
-              <Button size="sm" variant="outline">
-                Выбрать
-              </Button>
-            </li>
-          )),
+          c.accounts
+            .filter((a) => a.status === "connected")
+            .map((a) => (
+              <li
+                key={a.id}
+                className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-surface"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-foreground">{a.name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {c.name} · {a.identifier}
+                  </p>
+                </div>
+                <Button size="sm" variant="outline">
+                  Выбрать
+                </Button>
+              </li>
+            )),
         )}
-        {conns.every((c) => c.accounts.length === 0) && (
+        {conns.length === 0 && (
           <li className="px-3 py-3 text-sm text-muted-foreground">
             Подходящих подключений нет — добавьте их в разделе «Подключения».
           </li>
@@ -473,21 +518,28 @@ function SourcePanel({
   return null;
 }
 
-// --------------------- Merge ---------------------
+// --------------------- Combining ---------------------
 
-function MergeStep({ product, projectId }: { product: Product; projectId: string }) {
+function CombiningStep({ product, projectId }: { product: Product; projectId: string }) {
   const [plan, setPlan] = useState<"by-keys" | "concat" | "manual">("by-keys");
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
         <Card className="border bg-card shadow-none">
           <CardContent className="space-y-3 p-5">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Источники
-            </p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <SourceChip name="campaign_export.xlsx" sub="2 184 строки · 17 колонок" />
-              <SourceChip name="stats_april.csv" sub="2 010 строк · 12 колонок" />
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                Совпадение источников
+              </p>
+              <ul className="space-y-1 text-sm text-foreground">
+                <li>· Источник 1 совпал: 100%</li>
+                <li>· Источник 2 совпал: 87%</li>
+                <li>· Строк в итоге: ~1 239</li>
+                <li>· Ключи совпадения: date + campaign_id</li>
+                <li className="text-muted-foreground">
+                  · Только в источнике 1: 142 строки · только в источнике 2: 0
+                </li>
+              </ul>
             </div>
 
             <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">
@@ -498,7 +550,7 @@ function MergeStep({ product, projectId }: { product: Product; projectId: string
                 active={plan === "by-keys"}
                 onClick={() => setPlan("by-keys")}
                 title="Связать по ключам"
-                desc="Найдено совпадение по колонкам campaign_id и date — рекомендуемый план."
+                desc="Найдено совпадение по колонкам campaign_id и date."
                 badge="Рекомендуется"
               />
               <PlanRow
@@ -514,37 +566,6 @@ function MergeStep({ product, projectId }: { product: Product; projectId: string
                 desc="Указать колонки соответствия самостоятельно."
               />
             </div>
-
-            <div className="rounded-md border bg-surface p-3 text-xs">
-              <p className="mb-2 font-medium text-foreground">Превью совпадений</p>
-              <div className="overflow-hidden rounded-md border bg-card">
-                <table className="w-full text-xs">
-                  <thead className="bg-surface text-left text-muted-foreground">
-                    <tr>
-                      <th className="px-2 py-1 font-medium">campaign_id</th>
-                      <th className="px-2 py-1 font-medium">date</th>
-                      <th className="px-2 py-1 font-medium">источник 1</th>
-                      <th className="px-2 py-1 font-medium">источник 2</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {[
-                      ["c-1042", "2025-04-12", "✓", "✓"],
-                      ["c-1042", "2025-04-13", "✓", "✓"],
-                      ["c-1043", "2025-04-12", "✓", "—"],
-                    ].map((row, i) => (
-                      <tr key={i}>
-                        {row.map((cell, j) => (
-                          <td key={j} className="px-2 py-1 text-foreground">
-                            {cell}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -557,19 +578,7 @@ function MergeStep({ product, projectId }: { product: Product; projectId: string
         ]}
       />
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="merge" projectId={projectId} />
-      </div>
-    </div>
-  );
-}
-
-function SourceChip({ name, sub }: { name: string; sub: string }) {
-  return (
-    <div className="flex items-center gap-2 rounded-md border bg-surface px-3 py-2 text-sm">
-      <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-foreground">{name}</p>
-        <p className="text-[11px] text-muted-foreground">{sub}</p>
+        <FlowActionBar product={product} current="combining" projectId={projectId} />
       </div>
     </div>
   );
@@ -602,7 +611,7 @@ function PlanRow({
         <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>
       </div>
       {badge && (
-        <span className="shrink-0 rounded-md border border-info/30 bg-info-soft px-1.5 py-0.5 text-[10px] font-medium text-info">
+        <span className="shrink-0 rounded-md border border-info/30 bg-info-soft px-1.5 py-0.5 text-[10px] font-medium text-info-foreground">
           {badge}
         </span>
       )}
@@ -623,12 +632,6 @@ function ParamsStep({ product, projectId }: { product: Product; projectId: strin
             </ParamRow>
             <ParamRow label="Максимальная длина фразы" hint="в словах">
               <Input defaultValue="6" className="h-9 w-32 text-sm" />
-            </ParamRow>
-            <ParamRow label="Бренды" hint="включить или исключить из результата">
-              <select className="h-9 rounded-md border bg-card px-2 text-sm">
-                <option>Включить</option>
-                <option>Исключить</option>
-              </select>
             </ParamRow>
             <ParamRow label="Минус-слова" hint="через запятую или с новой строки">
               <Textarea
@@ -658,40 +661,20 @@ function ParamsStep({ product, projectId }: { product: Product; projectId: strin
     );
   }
 
-  // bd-optimization placeholder params
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
         <CardContent className="space-y-4 p-5">
-          <ParamRow label="Целевая метрика" hint="что оптимизируем">
-            <select className="h-9 rounded-md border bg-card px-2 text-sm">
-              <option>CPA</option>
-              <option>ROAS</option>
-              <option>CR</option>
-            </select>
-          </ParamRow>
-          <ParamRow label="Целевое значение" hint="например, целевой CPA">
-            <Input defaultValue="450" className="h-9 w-32 text-sm" />
-          </ParamRow>
-          <ParamRow label="Лимит бюджета" hint="дневной, в рублях">
-            <Input defaultValue="80000" className="h-9 w-32 text-sm" />
-          </ParamRow>
-          <ParamRow label="Стратегия" hint="агрессивность изменения ставок">
-            <select className="h-9 rounded-md border bg-card px-2 text-sm">
-              <option>Аккуратная</option>
-              <option>Стандартная</option>
-              <option>Агрессивная</option>
-            </select>
+          <ParamRow label="Дополнительные параметры">
+            <p className="text-xs text-muted-foreground">
+              Для этого продукта дополнительные параметры не требуются. Перейдите к проверке.
+            </p>
           </ParamRow>
         </CardContent>
       </Card>
       <HelpCard
         title="Подсказки"
-        items={[
-          "Для новых кампаний выбирайте «Аккуратную» стратегию",
-          "Лимит бюджета влияет на верхнюю границу рекомендуемых ставок",
-          "Можно вернуться и поменять параметры — источник сохранится",
-        ]}
+        items={["Параметры можно поменять позже без потери источника"]}
       />
       <div className="lg:col-span-3">
         <FlowActionBar product={product} current="params" projectId={projectId} />
@@ -720,77 +703,96 @@ function ParamRow({
   );
 }
 
-// --------------------- Metrics & focus ---------------------
+// --------------------- Metrics & focus (campaign-analysis) ---------------------
 
-function MetricsFocusStep({
-  product,
-  projectId,
-}: {
-  product: Product;
-  projectId: string;
-}) {
-  const [selected, setSelected] = useState<Set<string>>(
-    new Set(["impressions", "clicks", "cost", "conversions"]),
-  );
+function MetricsStep({ product, projectId }: { product: Product; projectId: string }) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(["cpa"]));
   const toggle = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
-      else next.add(id);
+      else if (next.size < 2) next.add(id);
       return next;
     });
+  const groups: MetricGroup[] = ["absolute", "relative"];
+  const hasAbsolute = [...selected].some(
+    (id) => metricsCatalog.find((m) => m.id === id)?.group === "absolute",
+  );
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
-        <CardContent className="space-y-4 p-5">
+        <CardContent className="space-y-5 p-5">
+          <div>
+            <p className="text-sm font-medium text-foreground">Ключевые метрики</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Выберите 1–2 ключевые метрики, которые важны для вашего анализа.
+            </p>
+            <div className="mt-3 space-y-3">
+              {groups.map((g) => (
+                <div key={g}>
+                  <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {metricGroupLabel[g]}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {metricsCatalog
+                      .filter((m) => m.group === g)
+                      .map((m) => {
+                        const active = selected.has(m.id);
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => toggle(m.id)}
+                            className={cn(
+                              "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                              active
+                                ? "border-primary bg-accent text-accent-foreground"
+                                : "border-border bg-card text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            {m.name}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {!hasAbsolute && selected.size > 0 && (
+              <p className="mt-2 text-[11px] text-warning-foreground">
+                Хотя бы одна выбранная метрика должна быть из абсолютных.
+              </p>
+            )}
+          </div>
+
           <div>
             <Label htmlFor="focus" className="text-xs font-medium">
-              Фокус анализа
+              Фокус анализа <span className="text-muted-foreground">(опционально)</span>
             </Label>
             <Textarea
               id="focus"
-              placeholder="На что обратить особое внимание: сегмент, период, гипотеза…"
+              placeholder="Например: сделайте акцент на CPA, проблемных кампаниях и точках роста"
               className="mt-1 min-h-[72px] text-sm"
             />
-          </div>
-          <div>
-            <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              Метрики ({selected.size} из {metricsCatalog.length})
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {metricsCatalog.map((m) => {
-                const active = selected.has(m.id);
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => toggle(m.id)}
-                    className={cn(
-                      "rounded-md border px-2.5 py-1 text-xs transition-colors",
-                      active
-                        ? "border-primary bg-accent text-accent-foreground"
-                        : "border-border bg-card text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {m.name}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </CardContent>
       </Card>
       <HelpCard
         title="Подсказки"
         items={[
-          "Выберите 4–6 ключевых метрик — отчёт будет компактнее",
+          "Не больше 2 ключевых метрик — отчёт будет точнее",
+          "Хотя бы одна метрика — из абсолютных",
           "Фокус анализа помогает выделить нужный сегмент",
-          "Можно вернуться и поменять метрики позже",
         ]}
       />
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="metrics-focus" projectId={projectId} />
+        <FlowActionBar
+          product={product}
+          current="metrics"
+          projectId={projectId}
+          nextDisabled={selected.size === 0 || !hasAbsolute}
+        />
       </div>
     </div>
   );
@@ -832,7 +834,9 @@ function CheckStep({ product, projectId }: { product: Product; projectId: string
                 <dt className="text-muted-foreground">Колонок</dt>
                 <dd className="text-foreground">17</dd>
                 <dt className="text-muted-foreground">Период</dt>
-                <dd className="text-foreground">01.04.2025 — 24.04.2025</dd>
+                <dd className="text-foreground">01.04.2026 — 24.04.2026</dd>
+                <dt className="text-muted-foreground">Кампаний</dt>
+                <dd className="text-foreground">18</dd>
               </dl>
             </div>
 
@@ -843,7 +847,7 @@ function CheckStep({ product, projectId }: { product: Product; projectId: string
               <ul className="mt-1 space-y-1 text-sm text-muted-foreground">
                 <li>· Продукт: {product.name}</li>
                 <li>· Формат результата: {resultFormatLabel[product.resultFormat]}</li>
-                <li>· Куда сохранится: Библиотека проекта</li>
+                <li>· Куда сохранится: Библиотека</li>
                 <li>· Ожидаемое время обработки: ~2 мин</li>
               </ul>
             </div>
@@ -891,7 +895,7 @@ function CheckStep({ product, projectId }: { product: Product; projectId: string
                   to="/v4/run/$productId/$step"
                   params={{ productId: product.id, step: next }}
                 >
-                  Запустить с предупреждением <ArrowRight className="h-3.5 w-3.5" />
+                  Запустить <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>
             )
@@ -913,7 +917,7 @@ function RunStep({ product, projectId }: { product: Product; projectId: string }
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <div>
               <p className="text-sm font-medium text-foreground">
-                {product.name} — выполняется
+                {product.name} — идёт обработка
               </p>
               <p className="text-xs text-muted-foreground">
                 Подготовка результата · ~2 мин
@@ -922,14 +926,13 @@ function RunStep({ product, projectId }: { product: Product; projectId: string }
           </div>
           <Progress value={62} className="h-1.5" />
           <ul className="space-y-1 text-xs text-muted-foreground">
-            <li>· Чтение источника</li>
-            <li>· Подготовка структуры результата</li>
-            <li className="text-foreground">· Формирование итогового артефакта…</li>
-            <li>· Регистрация в Библиотеке проекта</li>
+            <li>· Читаем источник</li>
+            <li>· Проверяем структуру</li>
+            <li className="text-foreground">· Формируем результат…</li>
+            <li>· Сохраняем в Библиотеке</li>
           </ul>
           <p className="rounded-md border bg-surface px-3 py-2 text-xs text-muted-foreground">
-            Можно безопасно закрыть страницу — мы продолжим обработку и сохраним результат
-            в Библиотеке проекта.
+            Можно безопасно вернуться позже — результат появится в Библиотеке.
           </p>
         </CardContent>
       </Card>
@@ -937,7 +940,7 @@ function RunStep({ product, projectId }: { product: Product; projectId: string }
         title="Что произойдёт"
         items={[
           "Платформа подготовит результат",
-          "Зарегистрирует его в Библиотеке проекта",
+          "Сохранит его в Библиотеке",
           "Покажет ссылку или файл на следующем шаге",
         ]}
       />
@@ -984,18 +987,18 @@ function ResultStep({ product, projectId }: { product: Product; projectId: strin
         <CardContent className="space-y-4 p-6">
           <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
             <CheckCircle2 className="h-4 w-4" />
-            Результат сохранён в Библиотеке проекта.
+            Результат сохранён в Библиотеке.
           </div>
 
           <div className="rounded-md border bg-surface px-4 py-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Имя результата
+              Результат готов
             </p>
             <p className="mt-1 text-base font-semibold text-foreground">
-              {product.exampleResultName}
+              {product.name} — 26.04.2026
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Формат: {resultFormatLabel[product.resultFormat]} · Продукт: {product.name}
+              Формат: {resultFormatLabel[product.resultFormat]}
             </p>
           </div>
 
@@ -1004,7 +1007,7 @@ function ResultStep({ product, projectId }: { product: Product; projectId: strin
               <PrimaryIcon className="h-3.5 w-3.5" /> {primaryLabel}
             </Button>
             <Button variant="outline" asChild>
-              <Link to="/v4/library">Открыть библиотеку</Link>
+              <Link to="/v4/library">Открыть Библиотеку</Link>
             </Button>
             <Button variant="ghost" asChild>
               <Link to="/v4/projects/$projectId" params={{ projectId }}>
@@ -1019,9 +1022,9 @@ function ResultStep({ product, projectId }: { product: Product; projectId: strin
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             Где сохранён
           </p>
-          <p className="mt-1 text-sm text-foreground">{product.page.resultDestination}</p>
+          <p className="mt-1 text-sm text-foreground">Библиотека</p>
           <p className="mt-3 text-xs text-muted-foreground">
-            Все источники и результаты проекта собраны в Библиотеке проекта.
+            Все источники и результаты проекта собраны в Библиотеке.
           </p>
         </CardContent>
       </Card>
