@@ -104,7 +104,7 @@ function getEffectiveSteps(product: Product, hasSecondSource: boolean): StepId[]
 
 function FlowRunnerPage() {
   const params = Route.useParams();
-  const search = Route.useSearch();
+  const search = Route.useSearch() as RunnerSearch;
   const productId = params.productId;
   const step = params.step as StepId;
   const product = getProduct(productId);
