@@ -259,11 +259,11 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
   const sourceHelp: string[] = [
     `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
     ...(product.supportedConnections.length > 0
-      ? ["Можно выбрать подключение"]
+      ? ["Можно выбрать подключённый аккаунт"]
       : []),
     "Можно выбрать источник из Библиотеки",
     ...(product.supportsSecondSource
-      ? ["Можно добавить второй источник"]
+      ? ["Второй источник равноправен первому: те же варианты"]
       : []),
   ];
 
