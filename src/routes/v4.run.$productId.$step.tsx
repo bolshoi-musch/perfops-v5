@@ -253,6 +253,7 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
   const [activeKind, setActiveKind] = useState<SourceKind>(product.allowedSources[0]);
   const [secondKind, setSecondKind] = useState<SourceKind>(product.allowedSources[0]);
   const [hasFile, setHasFile] = useState(true);
+  const [hasSecondFile, setHasSecondFile] = useState(false);
   const [secondSourceOpen, setSecondSourceOpen] = useState(false);
 
   const sourceHelp: string[] = [
