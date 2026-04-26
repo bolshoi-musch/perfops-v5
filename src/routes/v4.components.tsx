@@ -19,11 +19,15 @@ import {
   Download,
   ExternalLink,
   FileSpreadsheet,
+  FileText,
   Info,
+  Loader2,
   Plug,
+  Plus,
   Search,
   Upload,
   XCircle,
+  Inbox,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -36,7 +40,6 @@ function ComponentsPage() {
   return (
     <AppShellV4>
       <PageHeaderV4
-        eyebrow="Внутренний справочник"
         title="UI-компоненты"
         subtitle="Базовые элементы интерфейса PerfOps. Названия компонентов на английском, тексты примеров — на русском."
       />
@@ -44,7 +47,7 @@ function ComponentsPage() {
       <div className="space-y-6">
         <Section
           title="Buttons"
-          description="Primary → Secondary → Text/link → Destructive. На одном экране использовать только одну основную кнопку. Вторичные действия не должны конкурировать с основной."
+          description="Primary → Secondary → Text/link → Destructive. На одном экране — только одна основная кнопка."
         >
           <div className="space-y-3">
             <Row label="Primary">
@@ -58,6 +61,19 @@ function ComponentsPage() {
             </Row>
             <Row label="Destructive">
               <Button variant="destructive">Удалить подключение</Button>
+            </Row>
+            <Row label="Disabled">
+              <Button disabled>Создать проект</Button>
+            </Row>
+            <Row label="Loading">
+              <Button disabled>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Создание…
+              </Button>
+            </Row>
+            <Row label="With icon">
+              <Button>
+                <Plus className="h-3.5 w-3.5" /> Новый проект
+              </Button>
             </Row>
           </div>
         </Section>
