@@ -852,51 +852,97 @@ function LibrarySourcePicker({ product }: { product: Product }) {
 
 // --------------------- Combining ---------------------
 
-function CombiningStep({ product, projectId }: { product: Product; projectId: string }) {
+function CombiningStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
   const [plan, setPlan] = useState<"by-keys" | "concat" | "manual">("by-keys");
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
         <Card className="border bg-card shadow-none">
-          <CardContent className="space-y-3 p-5">
+          <CardContent className="space-y-4 p-5">
+            {/* Selected sources summary */}
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                Выбранные источники
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-md border bg-surface px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Источник 1
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-muted-foreground" />
+                    campaign_export.xlsx
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    XLSX · 2 184 строки · 17 колонок
+                  </p>
+                </div>
+                <div className="rounded-md border bg-surface px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Источник 2
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+                    <Plug className="h-3.5 w-3.5 text-muted-foreground" />
+                    Яндекс Директ — Основной кабинет
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Подключение · 1 097 строк · 12 колонок
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Match diagnostics */}
             <div>
               <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
                 Совпадение источников
               </p>
               <ul className="space-y-1 text-sm text-foreground">
-                <li>· Источник 1 совпал: 100%</li>
-                <li>· Источник 2 совпал: 87%</li>
+                <li>· Источник 1 совпало: 100%</li>
+                <li>· Источник 2 совпало: 87%</li>
                 <li>· Строк в итоге: ~1 239</li>
                 <li>· Ключи совпадения: date + campaign_id</li>
                 <li className="text-muted-foreground">
                   · Только в источнике 1: 142 строки · только в источнике 2: 0
                 </li>
+                <li className="text-muted-foreground">· Дубли по ключам: 6</li>
               </ul>
             </div>
 
-            <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">
-              План объединения
-            </p>
-            <div className="grid gap-2">
-              <PlanRow
-                active={plan === "by-keys"}
-                onClick={() => setPlan("by-keys")}
-                title="Связать по ключам"
-                desc="Найдено совпадение по колонкам campaign_id и date."
-                badge="Рекомендуется"
-              />
-              <PlanRow
-                active={plan === "concat"}
-                onClick={() => setPlan("concat")}
-                title="Объединить строки"
-                desc="Структуры совпадают — можно склеить как одну таблицу."
-              />
-              <PlanRow
-                active={plan === "manual"}
-                onClick={() => setPlan("manual")}
-                title="Выбрать ключи вручную"
-                desc="Указать колонки соответствия самостоятельно."
-              />
+            {/* Plan picker */}
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                План объединения
+              </p>
+              <div className="grid gap-2">
+                <PlanRow
+                  active={plan === "by-keys"}
+                  onClick={() => setPlan("by-keys")}
+                  title="Связать по ключам"
+                  desc="Найдено совпадение по колонкам campaign_id и date."
+                  badge="Рекомендуется"
+                />
+                <PlanRow
+                  active={plan === "concat"}
+                  onClick={() => setPlan("concat")}
+                  title="Объединить строки"
+                  desc="Структуры совпадают — можно склеить как одну таблицу."
+                />
+                <PlanRow
+                  active={plan === "manual"}
+                  onClick={() => setPlan("manual")}
+                  title="Выбрать ключи вручную"
+                  desc="Указать колонки соответствия самостоятельно."
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -910,7 +956,13 @@ function CombiningStep({ product, projectId }: { product: Product; projectId: st
         ]}
       />
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="combining" projectId={projectId} />
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="combining"
+          projectId={projectId}
+          search={{ second: 1 }}
+        />
       </div>
     </div>
   );
