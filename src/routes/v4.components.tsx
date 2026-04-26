@@ -19,11 +19,15 @@ import {
   Download,
   ExternalLink,
   FileSpreadsheet,
+  FileText,
   Info,
+  Loader2,
   Plug,
+  Plus,
   Search,
   Upload,
   XCircle,
+  Inbox,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -36,7 +40,6 @@ function ComponentsPage() {
   return (
     <AppShellV4>
       <PageHeaderV4
-        eyebrow="Внутренний справочник"
         title="UI-компоненты"
         subtitle="Базовые элементы интерфейса PerfOps. Названия компонентов на английском, тексты примеров — на русском."
       />
@@ -44,7 +47,7 @@ function ComponentsPage() {
       <div className="space-y-6">
         <Section
           title="Buttons"
-          description="Primary → Secondary → Text/link → Destructive. На одном экране использовать только одну основную кнопку. Вторичные действия не должны конкурировать с основной."
+          description="Primary → Secondary → Text/link → Destructive. На одном экране — только одна основная кнопка."
         >
           <div className="space-y-3">
             <Row label="Primary">
@@ -58,6 +61,19 @@ function ComponentsPage() {
             </Row>
             <Row label="Destructive">
               <Button variant="destructive">Удалить подключение</Button>
+            </Row>
+            <Row label="Disabled">
+              <Button disabled>Создать проект</Button>
+            </Row>
+            <Row label="Loading">
+              <Button disabled>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Создание…
+              </Button>
+            </Row>
+            <Row label="With icon">
+              <Button>
+                <Plus className="h-3.5 w-3.5" /> Новый проект
+              </Button>
             </Row>
           </div>
         </Section>
@@ -261,7 +277,7 @@ function ComponentsPage() {
           </div>
         </Section>
 
-        <Section title="Inputs">
+        <Section title="Inputs / Form field states">
           <div className="grid max-w-md gap-3">
             <div>
               <Label htmlFor="demo-name" className="text-xs font-medium">
@@ -272,6 +288,123 @@ function ComponentsPage() {
                 placeholder="Например: Кросс-минусовка — 26.04.2026"
                 className="mt-1 h-9"
               />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Короткое название, видно в списке проектов.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="demo-disabled" className="text-xs font-medium">
+                Disabled
+              </Label>
+              <Input id="demo-disabled" disabled defaultValue="—" className="mt-1 h-9" />
+            </div>
+            <div>
+              <Label htmlFor="demo-error" className="text-xs font-medium">
+                Error
+              </Label>
+              <Input
+                id="demo-error"
+                defaultValue="!!"
+                className="mt-1 h-9 border-destructive focus-visible:ring-destructive"
+              />
+              <p className="mt-1 text-[11px] text-destructive">
+                Название не должно содержать спецсимволы.
+              </p>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          title="FlowStepper"
+          description="Состояния шагов: completed, active, upcoming, optional."
+        >
+          <ol className="flex flex-wrap items-center gap-2">
+            {[
+              { label: "Источник", state: "done" },
+              { label: "Проверка", state: "active" },
+              { label: "Запуск", state: "upcoming" },
+              { label: "Объединение", state: "optional" },
+              { label: "Результат", state: "upcoming" },
+            ].map((s, i, arr) => (
+              <li key={s.label} className="flex flex-1 items-center gap-2 min-w-fit">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-medium",
+                      s.state === "done" && "border-primary bg-primary text-primary-foreground",
+                      s.state === "active" && "border-primary bg-card text-primary",
+                      s.state === "upcoming" && "border-border bg-card text-muted-foreground",
+                      s.state === "optional" && "border-dashed border-border bg-card text-muted-foreground",
+                    )}
+                  >
+                    {s.state === "done" ? <CheckCircle2 className="h-3 w-3" /> : i + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-xs",
+                      s.state === "active" ? "font-medium text-foreground" : "text-muted-foreground",
+                    )}
+                  >
+                    {s.label}
+                    {s.state === "optional" && (
+                      <span className="ml-1 text-[10px] text-muted-foreground/70">(опц.)</span>
+                    )}
+                  </span>
+                </div>
+                {i < arr.length - 1 && (
+                  <div className={cn("h-px flex-1", s.state === "done" ? "bg-primary" : "bg-border")} />
+                )}
+              </li>
+            ))}
+          </ol>
+        </Section>
+
+        <Section
+          title="ResultAction"
+          description="Основное действие на странице результата зависит от формата."
+        >
+          <div className="flex flex-wrap gap-2">
+            <Button>
+              <ExternalLink className="h-3.5 w-3.5" /> Открыть дашборд
+            </Button>
+            <Button>
+              <FileText className="h-3.5 w-3.5" /> Открыть отчёт
+            </Button>
+            <Button>
+              <Download className="h-3.5 w-3.5" /> Скачать Excel-файл
+            </Button>
+            <Button variant="outline">Открыть Библиотеку</Button>
+          </div>
+        </Section>
+
+        <Section title="EmptyState">
+          <div className="rounded-md border border-dashed bg-surface p-8 text-center">
+            <Inbox className="mx-auto h-7 w-7 text-muted-foreground" />
+            <p className="mt-2 text-sm font-medium text-foreground">
+              Пока ничего нет
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Создайте первый проект, чтобы увидеть его здесь.
+            </p>
+            <Button size="sm" className="mt-3">
+              <Plus className="h-3.5 w-3.5" /> Новый проект
+            </Button>
+          </div>
+        </Section>
+
+        <Section
+          title="Table states"
+          description="Empty, loading, error — для таблиц проектов и Библиотеки."
+        >
+          <div className="space-y-2">
+            <div className="rounded-md border bg-card px-3 py-8 text-center text-sm text-muted-foreground">
+              Ничего не найдено по выбранным фильтрам.
+            </div>
+            <div className="flex items-center justify-center gap-2 rounded-md border bg-card px-3 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Загружаем данные…
+            </div>
+            <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-3 text-sm text-destructive">
+              Не удалось загрузить данные. Попробуйте обновить страницу.
             </div>
           </div>
         </Section>

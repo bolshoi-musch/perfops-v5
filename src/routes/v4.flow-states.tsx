@@ -263,9 +263,8 @@ function FlowStatesPage() {
   return (
     <AppShellV4>
       <PageHeaderV4
-        eyebrow="Внутренний справочник"
         title="Справочник состояний"
-        subtitle="Все состояния продуктовых сценариев — от выбора источника до сохранения результата."
+        subtitle="Все состояния продуктовых сценариев — от выбора источника до сохранения результата. Технические тональности (info, warning и т. п.) показаны как внутренний справочник и не используются в пользовательском интерфейсе."
       />
       <div className="grid gap-3 lg:grid-cols-2">
         {states.map((s) => {
@@ -281,14 +280,19 @@ function FlowStatesPage() {
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">{s.description}</p>
                   </div>
-                  <span
-                    className={cn(
-                      "inline-flex shrink-0 items-center rounded-md border px-1.5 py-0.5 text-[10px] font-mono lowercase",
-                      tone.chip,
-                    )}
-                  >
-                    {tone.label}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-0.5">
+                    <span className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                      tone
+                    </span>
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-mono lowercase",
+                        tone.chip,
+                      )}
+                    >
+                      {tone.label}
+                    </span>
+                  </div>
                 </div>
                 <div className="rounded-md border-t pt-3">{s.example}</div>
               </CardContent>

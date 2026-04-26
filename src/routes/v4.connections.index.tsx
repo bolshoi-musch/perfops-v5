@@ -15,7 +15,6 @@ function ConnectionsPage() {
   return (
     <AppShellV4>
       <PageHeaderV4
-        eyebrow="Интеграции"
         title="Подключения"
         subtitle="Постоянные интеграции с внешними сервисами. Используются как источники внутри продуктов."
       />

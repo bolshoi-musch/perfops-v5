@@ -88,7 +88,6 @@ function FlowRunnerPage() {
     throw notFound();
   }
   const project = projects.find((p) => p.productId === productId) ?? projects[0];
-  const stepIndex = product.steps.indexOf(step);
 
   return (
     <AppShellV4>
@@ -99,7 +98,6 @@ function FlowRunnerPage() {
         step={stepLabel[step]}
       />
       <PageHeaderV4
-        eyebrow={`Шаг ${stepIndex + 1} из ${product.steps.length}`}
         title={titleFor(step, product)}
         subtitle={subtitleFor(step, product)}
       />
@@ -135,7 +133,7 @@ function titleFor(step: StepId, product: Product): string {
 function subtitleFor(step: StepId, product: Product): string | undefined {
   switch (step) {
     case "scenario":
-      return "Сценарий определяет дальнейшие шаги.";
+      return "Выберите сценарий работы. Он определит следующие шаги и параметры.";
     case "source":
       return "Поведение и набор источников зависят от продукта.";
     case "combining":
@@ -836,7 +834,7 @@ function PlanRow({
         <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>
       </div>
       {badge && (
-        <span className="shrink-0 rounded-md border border-info/30 bg-info-soft px-1.5 py-0.5 text-[10px] font-medium text-info-foreground">
+        <span className="shrink-0 rounded-md border border-info/30 bg-info-soft px-1.5 py-0.5 text-[10px] font-medium text-info">
           {badge}
         </span>
       )}

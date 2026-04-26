@@ -41,7 +41,6 @@ function ProjectsPage() {
   return (
     <AppShellV4>
       <PageHeaderV4
-        eyebrow="Все проекты"
         title="Проекты"
         subtitle="Каждый проект создаётся для одного продукта. Сортировка по последнему обновлению."
         actions={

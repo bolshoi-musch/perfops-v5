@@ -16,8 +16,6 @@ import {
   Download,
   ExternalLink,
   FileText,
-  RefreshCw,
-  Library as LibraryIcon,
   CheckCircle2,
   AlertTriangle,
   XCircle,
@@ -69,11 +67,14 @@ function ProjectDetailPage() {
         ]}
       />
       <PageHeaderV4
-        eyebrow="Проект"
         title={project.name}
         subtitle={project.description}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          result && resultAction && ResultIcon ? (
+            <Button size="sm">
+              <ResultIcon className="h-3.5 w-3.5" /> {resultAction.label}
+            </Button>
+          ) : (
             <Button asChild size="sm">
               <Link
                 to="/v4/run/$productId/$step"
@@ -82,22 +83,7 @@ function ProjectDetailPage() {
                 Продолжить <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
-            {result && (
-              <Button asChild size="sm" variant="outline">
-                <Link
-                  to="/v4/run/$productId/$step"
-                  params={{ productId: product.id, step: firstStep }}
-                >
-                  <RefreshCw className="h-3.5 w-3.5" /> Повторить обработку
-                </Link>
-              </Button>
-            )}
-            <Button asChild size="sm" variant="ghost">
-              <Link to="/v4/library">
-                <LibraryIcon className="h-3.5 w-3.5" /> Открыть Библиотеку
-              </Link>
-            </Button>
-          </div>
+          )
         }
       />
 
