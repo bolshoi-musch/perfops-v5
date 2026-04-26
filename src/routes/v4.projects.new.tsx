@@ -65,13 +65,12 @@ function NewProjectPage() {
 
   const product = getProduct(productId);
   const canSubmit = name.trim().length > 0;
-  const firstStep = product.steps[0];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     navigate({
       to: "/v4/run/$productId/$step",
-      params: { productId, step: firstStep },
+      params: { productId, step: "source" },
     });
   };
 
