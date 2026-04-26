@@ -316,12 +316,45 @@ const sourceIcon: Record<SourceKind, typeof Upload> = {
   url: LinkIcon,
 };
 
-function SourceStep({ product, projectId }: { product: Product; projectId: string }) {
+function SourceStep({
+  product,
+  projectId,
+  steps,
+  hasSecondSource,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+  hasSecondSource: boolean;
+}) {
+  const navigate = useNavigate();
   const [activeKind, setActiveKind] = useState<SourceKind>(product.allowedSources[0]);
   const [secondKind, setSecondKind] = useState<SourceKind>(product.allowedSources[0]);
   const [hasFile, setHasFile] = useState(true);
   const [hasSecondFile, setHasSecondFile] = useState(false);
-  const [secondSourceOpen, setSecondSourceOpen] = useState(false);
+
+  const enableSecondSource = () => {
+    if (!hasSecondSource) {
+      // Sync URL flag → makes the "Объединение" step appear in the stepper
+      // and changes nav targets for prev/next.
+      navigate({
+        to: "/v4/run/$productId/$step",
+        params: { productId: product.id, step: "source" },
+        search: { second: 1 },
+        replace: true,
+      });
+    }
+  };
+
+  const disableSecondSource = () => {
+    setHasSecondFile(false);
+    navigate({
+      to: "/v4/run/$productId/$step",
+      params: { productId: product.id, step: "source" },
+      search: {},
+      replace: true,
+    });
+  };
 
   const sourceHelp: string[] = [
     `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
@@ -340,7 +373,7 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
         <Card className="border bg-card shadow-none">
           <CardContent className="p-5">
             <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              Тип источника
+              {product.supportsSecondSource ? "Источник 1 · тип" : "Тип источника"}
             </p>
             <div className="flex flex-wrap gap-2">
               {product.allowedSources.map((k) => {
@@ -380,10 +413,10 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
         {product.supportsSecondSource && (
           <Card className="border border-dashed bg-card shadow-none">
             <CardContent className="p-5">
-              {!secondSourceOpen ? (
+              {!hasSecondSource ? (
                 <button
                   type="button"
-                  onClick={() => setSecondSourceOpen(true)}
+                  onClick={enableSecondSource}
                   className="flex w-full items-center justify-between gap-3 rounded-md text-left text-sm text-muted-foreground hover:text-foreground"
                 >
                   <span className="inline-flex items-center gap-2">
@@ -391,7 +424,7 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
                   </span>
                   {product.supportsCombining && (
                     <span className="text-xs text-muted-foreground">
-                      На шаге «Объединение» вы выберете план
+                      Появится шаг «Объединение»
                     </span>
                   )}
                 </button>
@@ -399,14 +432,15 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Второй источник
+                      Источник 2 · тип
                     </p>
                     <button
                       type="button"
-                      onClick={() => setSecondSourceOpen(false)}
-                      className="text-xs text-muted-foreground hover:text-foreground"
+                      onClick={disableSecondSource}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                      aria-label="Удалить второй источник"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="h-3.5 w-3.5" /> Удалить
                     </button>
                   </div>
                   <div className="mb-3 flex flex-wrap gap-2">
@@ -448,7 +482,13 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
       <HelpCard items={sourceHelp} />
 
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="source" projectId={projectId} />
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="source"
+          projectId={projectId}
+          search={hasSecondSource ? { second: 1 } : {}}
+        />
       </div>
     </div>
   );
