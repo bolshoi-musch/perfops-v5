@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { AppShellV4 } from "@/components/perfops-v4/AppShellV4";
 import { PageHeaderV4 } from "@/components/perfops-v4/PageHeaderV4";
@@ -68,6 +68,13 @@ const stepSchema = z.enum([
   "result",
 ]);
 
+// Search params for the runner — currently just whether a second source is
+// active (drives the dynamic "Объединение" step in the stepper).
+type RunnerSearch = { second?: number };
+const searchSchema = z.object({
+  second: z.coerce.number().optional(),
+});
+
 export const Route = createFileRoute("/v4/run/$productId/$step")({
   head: ({ params }) => ({
     meta: [{ title: `${stepLabel[params.step as StepId] ?? "Шаг"} — PerfOps` }],
@@ -76,18 +83,45 @@ export const Route = createFileRoute("/v4/run/$productId/$step")({
     productId: String(raw.productId),
     step: stepSchema.parse(raw.step),
   }),
+  validateSearch: (raw): RunnerSearch => searchSchema.parse(raw),
   component: FlowRunnerPage,
 });
 
+/**
+ * Build the effective step list shown to the user.
+ *
+ * Note (UI prototype): step composition is currently derived inline from
+ * `product.steps` plus a runtime flag (second source). When the platform
+ * gains real product configuration, this should move into a per-product
+ * config / loader so the first step (and presence of optional steps like
+ * "combining") is determined by the product, not by hard-coded routing.
+ */
+function getEffectiveSteps(product: Product, hasSecondSource: boolean): StepId[] {
+  if (!product.supportsCombining) return product.steps;
+  if (hasSecondSource) return product.steps;
+  return product.steps.filter((s) => s !== "combining");
+}
+
 function FlowRunnerPage() {
   const params = Route.useParams();
+  const search = Route.useSearch() as RunnerSearch;
   const productId = params.productId;
   const step = params.step as StepId;
   const product = getProduct(productId);
   if (!product.steps.includes(step)) {
     throw notFound();
   }
+  const hasSecondSource = search.second === 1;
+  const effectiveSteps = getEffectiveSteps(product, hasSecondSource);
+
+  // If the URL points to "combining" but no second source is active, the
+  // step does not exist in the current flow — bounce back to source.
+  if (step === "combining" && !effectiveSteps.includes("combining")) {
+    throw notFound();
+  }
+
   const project = projects.find((p) => p.productId === productId) ?? projects[0];
+  const navSearch = hasSecondSource ? { second: 1 } : {};
 
   return (
     <AppShellV4>
@@ -101,8 +135,19 @@ function FlowRunnerPage() {
         title={titleFor(step, product)}
         subtitle={subtitleFor(step, product)}
       />
-      <FlowStepperV4 product={product} current={step} />
-      <StepBody product={product} step={step} projectId={project.id} />
+      <FlowStepperV4
+        product={product}
+        steps={effectiveSteps}
+        current={step}
+        search={navSearch}
+      />
+      <StepBody
+        product={product}
+        step={step}
+        projectId={project.id}
+        steps={effectiveSteps}
+        hasSecondSource={hasSecondSource}
+      />
     </AppShellV4>
   );
 }
@@ -137,7 +182,7 @@ function subtitleFor(step: StepId, product: Product): string | undefined {
     case "source":
       return "Поведение и набор источников зависят от продукта.";
     case "combining":
-      return "Если добавлено два источника — выберите план объединения.";
+      return "Выберите план объединения двух источников.";
     case "params":
       return "Параметры можно изменить позже без потери источника.";
     case "metrics":
@@ -156,34 +201,53 @@ function StepBody({
   product,
   step,
   projectId,
+  steps,
+  hasSecondSource,
 }: {
   product: Product;
   step: StepId;
   projectId: string;
+  steps: StepId[];
+  hasSecondSource: boolean;
 }) {
   switch (step) {
     case "scenario":
-      return <ScenarioStep product={product} projectId={projectId} />;
+      return <ScenarioStep product={product} projectId={projectId} steps={steps} />;
     case "source":
-      return <SourceStep product={product} projectId={projectId} />;
+      return (
+        <SourceStep
+          product={product}
+          projectId={projectId}
+          steps={steps}
+          hasSecondSource={hasSecondSource}
+        />
+      );
     case "combining":
-      return <CombiningStep product={product} projectId={projectId} />;
+      return <CombiningStep product={product} projectId={projectId} steps={steps} />;
     case "params":
-      return <ParamsStep product={product} projectId={projectId} />;
+      return <ParamsStep product={product} projectId={projectId} steps={steps} />;
     case "metrics":
-      return <MetricsStep product={product} projectId={projectId} />;
+      return <MetricsStep product={product} projectId={projectId} steps={steps} />;
     case "check":
-      return <CheckStep product={product} projectId={projectId} />;
+      return <CheckStep product={product} projectId={projectId} steps={steps} />;
     case "run":
-      return <RunStep product={product} projectId={projectId} />;
+      return <RunStep product={product} projectId={projectId} steps={steps} />;
     case "result":
-      return <ResultStep product={product} projectId={projectId} />;
+      return <ResultStep product={product} projectId={projectId} steps={steps} />;
   }
 }
 
 // --------------------- Scenario (semantics) ---------------------
 
-function ScenarioStep({ product, projectId }: { product: Product; projectId: string }) {
+function ScenarioStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
   const [scenario, setScenario] = useState<string>("balanced");
   const groups: SemanticsScenarioGroup[] = ["collection", "research", "processing"];
   return (
@@ -231,7 +295,12 @@ function ScenarioStep({ product, projectId }: { product: Product; projectId: str
         ]}
       />
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="scenario" projectId={projectId} />
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="scenario"
+          projectId={projectId}
+        />
       </div>
     </div>
   );
@@ -247,12 +316,45 @@ const sourceIcon: Record<SourceKind, typeof Upload> = {
   url: LinkIcon,
 };
 
-function SourceStep({ product, projectId }: { product: Product; projectId: string }) {
+function SourceStep({
+  product,
+  projectId,
+  steps,
+  hasSecondSource,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+  hasSecondSource: boolean;
+}) {
+  const navigate = useNavigate();
   const [activeKind, setActiveKind] = useState<SourceKind>(product.allowedSources[0]);
   const [secondKind, setSecondKind] = useState<SourceKind>(product.allowedSources[0]);
   const [hasFile, setHasFile] = useState(true);
   const [hasSecondFile, setHasSecondFile] = useState(false);
-  const [secondSourceOpen, setSecondSourceOpen] = useState(false);
+
+  const enableSecondSource = () => {
+    if (!hasSecondSource) {
+      // Sync URL flag → makes the "Объединение" step appear in the stepper
+      // and changes nav targets for prev/next.
+      navigate({
+        to: "/v4/run/$productId/$step",
+        params: { productId: product.id, step: "source" },
+        search: { second: 1 },
+        replace: true,
+      });
+    }
+  };
+
+  const disableSecondSource = () => {
+    setHasSecondFile(false);
+    navigate({
+      to: "/v4/run/$productId/$step",
+      params: { productId: product.id, step: "source" },
+      search: {},
+      replace: true,
+    });
+  };
 
   const sourceHelp: string[] = [
     `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
@@ -271,7 +373,7 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
         <Card className="border bg-card shadow-none">
           <CardContent className="p-5">
             <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              Тип источника
+              {product.supportsSecondSource ? "Источник 1 · тип" : "Тип источника"}
             </p>
             <div className="flex flex-wrap gap-2">
               {product.allowedSources.map((k) => {
@@ -311,10 +413,10 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
         {product.supportsSecondSource && (
           <Card className="border border-dashed bg-card shadow-none">
             <CardContent className="p-5">
-              {!secondSourceOpen ? (
+              {!hasSecondSource ? (
                 <button
                   type="button"
-                  onClick={() => setSecondSourceOpen(true)}
+                  onClick={enableSecondSource}
                   className="flex w-full items-center justify-between gap-3 rounded-md text-left text-sm text-muted-foreground hover:text-foreground"
                 >
                   <span className="inline-flex items-center gap-2">
@@ -322,7 +424,7 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
                   </span>
                   {product.supportsCombining && (
                     <span className="text-xs text-muted-foreground">
-                      На шаге «Объединение» вы выберете план
+                      Появится шаг «Объединение»
                     </span>
                   )}
                 </button>
@@ -330,14 +432,15 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Второй источник
+                      Источник 2 · тип
                     </p>
                     <button
                       type="button"
-                      onClick={() => setSecondSourceOpen(false)}
-                      className="text-xs text-muted-foreground hover:text-foreground"
+                      onClick={disableSecondSource}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                      aria-label="Удалить второй источник"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="h-3.5 w-3.5" /> Удалить
                     </button>
                   </div>
                   <div className="mb-3 flex flex-wrap gap-2">
@@ -379,7 +482,13 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
       <HelpCard items={sourceHelp} />
 
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="source" projectId={projectId} />
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="source"
+          projectId={projectId}
+          search={hasSecondSource ? { second: 1 } : {}}
+        />
       </div>
     </div>
   );
@@ -743,51 +852,97 @@ function LibrarySourcePicker({ product }: { product: Product }) {
 
 // --------------------- Combining ---------------------
 
-function CombiningStep({ product, projectId }: { product: Product; projectId: string }) {
+function CombiningStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
   const [plan, setPlan] = useState<"by-keys" | "concat" | "manual">("by-keys");
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
         <Card className="border bg-card shadow-none">
-          <CardContent className="space-y-3 p-5">
+          <CardContent className="space-y-4 p-5">
+            {/* Selected sources summary */}
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                Выбранные источники
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-md border bg-surface px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Источник 1
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-muted-foreground" />
+                    campaign_export.xlsx
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    XLSX · 2 184 строки · 17 колонок
+                  </p>
+                </div>
+                <div className="rounded-md border bg-surface px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Источник 2
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+                    <Plug className="h-3.5 w-3.5 text-muted-foreground" />
+                    Яндекс Директ — Основной кабинет
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Подключение · 1 097 строк · 12 колонок
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Match diagnostics */}
             <div>
               <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
                 Совпадение источников
               </p>
               <ul className="space-y-1 text-sm text-foreground">
-                <li>· Источник 1 совпал: 100%</li>
-                <li>· Источник 2 совпал: 87%</li>
+                <li>· Источник 1 совпало: 100%</li>
+                <li>· Источник 2 совпало: 87%</li>
                 <li>· Строк в итоге: ~1 239</li>
                 <li>· Ключи совпадения: date + campaign_id</li>
                 <li className="text-muted-foreground">
                   · Только в источнике 1: 142 строки · только в источнике 2: 0
                 </li>
+                <li className="text-muted-foreground">· Дубли по ключам: 6</li>
               </ul>
             </div>
 
-            <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">
-              План объединения
-            </p>
-            <div className="grid gap-2">
-              <PlanRow
-                active={plan === "by-keys"}
-                onClick={() => setPlan("by-keys")}
-                title="Связать по ключам"
-                desc="Найдено совпадение по колонкам campaign_id и date."
-                badge="Рекомендуется"
-              />
-              <PlanRow
-                active={plan === "concat"}
-                onClick={() => setPlan("concat")}
-                title="Объединить строки"
-                desc="Структуры совпадают — можно склеить как одну таблицу."
-              />
-              <PlanRow
-                active={plan === "manual"}
-                onClick={() => setPlan("manual")}
-                title="Выбрать ключи вручную"
-                desc="Указать колонки соответствия самостоятельно."
-              />
+            {/* Plan picker */}
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                План объединения
+              </p>
+              <div className="grid gap-2">
+                <PlanRow
+                  active={plan === "by-keys"}
+                  onClick={() => setPlan("by-keys")}
+                  title="Связать по ключам"
+                  desc="Найдено совпадение по колонкам campaign_id и date."
+                  badge="Рекомендуется"
+                />
+                <PlanRow
+                  active={plan === "concat"}
+                  onClick={() => setPlan("concat")}
+                  title="Объединить строки"
+                  desc="Структуры совпадают — можно склеить как одну таблицу."
+                />
+                <PlanRow
+                  active={plan === "manual"}
+                  onClick={() => setPlan("manual")}
+                  title="Выбрать ключи вручную"
+                  desc="Указать колонки соответствия самостоятельно."
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -801,7 +956,13 @@ function CombiningStep({ product, projectId }: { product: Product; projectId: st
         ]}
       />
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="combining" projectId={projectId} />
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="combining"
+          projectId={projectId}
+          search={{ second: 1 }}
+        />
       </div>
     </div>
   );
@@ -844,7 +1005,15 @@ function PlanRow({
 
 // --------------------- Params ---------------------
 
-function ParamsStep({ product, projectId }: { product: Product; projectId: string }) {
+function ParamsStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
   if (product.id === "semantics-generator") {
     return (
       <div className="grid gap-4 lg:grid-cols-3">
@@ -878,7 +1047,12 @@ function ParamsStep({ product, projectId }: { product: Product; projectId: strin
           ]}
         />
         <div className="lg:col-span-3">
-          <FlowActionBar product={product} current="params" projectId={projectId} />
+          <FlowActionBar
+            product={product}
+            steps={steps}
+            current="params"
+            projectId={projectId}
+          />
         </div>
       </div>
     );
@@ -900,7 +1074,12 @@ function ParamsStep({ product, projectId }: { product: Product; projectId: strin
         items={["Параметры можно поменять позже без потери источника"]}
       />
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="params" projectId={projectId} />
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="params"
+          projectId={projectId}
+        />
       </div>
     </div>
   );
@@ -928,8 +1107,16 @@ function ParamRow({
 
 // --------------------- Metrics & focus (campaign-analysis) ---------------------
 
-function MetricsStep({ product, projectId }: { product: Product; projectId: string }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set(["cpa"]));
+function MetricsStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(["cpa", "clicks"]));
   const toggle = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
@@ -1012,6 +1199,7 @@ function MetricsStep({ product, projectId }: { product: Product; projectId: stri
       <div className="lg:col-span-3">
         <FlowActionBar
           product={product}
+          steps={steps}
           current="metrics"
           projectId={projectId}
           nextDisabled={selected.size === 0 || !hasAbsolute}
@@ -1023,8 +1211,17 @@ function MetricsStep({ product, projectId }: { product: Product; projectId: stri
 
 // --------------------- Check ---------------------
 
-function CheckStep({ product, projectId }: { product: Product; projectId: string }) {
-  const next = getNextStep(product, "check");
+function CheckStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
+  const idx = steps.indexOf("check");
+  const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : undefined;
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
@@ -1109,6 +1306,7 @@ function CheckStep({ product, projectId }: { product: Product; projectId: string
       <div className="lg:col-span-3">
         <FlowActionBar
           product={product}
+          steps={steps}
           current="check"
           projectId={projectId}
           nextSlot={
@@ -1131,7 +1329,15 @@ function CheckStep({ product, projectId }: { product: Product; projectId: string
 
 // --------------------- Run ---------------------
 
-function RunStep({ product, projectId }: { product: Product; projectId: string }) {
+function RunStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
@@ -1170,6 +1376,7 @@ function RunStep({ product, projectId }: { product: Product; projectId: string }
       <div className="lg:col-span-3">
         <FlowActionBar
           product={product}
+          steps={steps}
           current="run"
           projectId={projectId}
           nextSlot={

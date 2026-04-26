@@ -6,20 +6,27 @@ import { stepLabel } from "@/lib/perfops-v4-data";
 
 interface FlowStepperV4Props {
   product: Product;
+  /** The actual steps to render — may be a subset of product.steps
+   *  (e.g. "combining" hidden until a second source is added). */
+  steps: StepId[];
   current: StepId;
+  /** Optional search params to preserve across step navigation. */
+  search?: Record<string, unknown>;
 }
 
-const optionalSteps: StepId[] = ["combining"];
-
-export function FlowStepperV4({ product, current }: FlowStepperV4Props) {
-  const currentIndex = product.steps.indexOf(current);
+export function FlowStepperV4({
+  product,
+  steps,
+  current,
+  search,
+}: FlowStepperV4Props) {
+  const currentIndex = steps.indexOf(current);
 
   return (
     <ol className="mb-6 flex w-full flex-wrap items-center gap-2">
-      {product.steps.map((step, i) => {
+      {steps.map((step, i) => {
         const done = i < currentIndex;
         const active = i === currentIndex;
-        const optional = optionalSteps.includes(step);
         const clickable = done; // completed steps are clickable
         const label = stepLabel[step];
 
@@ -32,9 +39,7 @@ export function FlowStepperV4({ product, current }: FlowStepperV4Props) {
                 active && "border-primary bg-card text-primary",
                 !done &&
                   !active &&
-                  (optional
-                    ? "border-dashed border-border bg-card text-muted-foreground"
-                    : "border-border bg-card text-muted-foreground"),
+                  "border-border bg-card text-muted-foreground",
               )}
             >
               {done ? <Check className="h-3 w-3" /> : i + 1}
@@ -47,11 +52,6 @@ export function FlowStepperV4({ product, current }: FlowStepperV4Props) {
               )}
             >
               {label}
-              {optional && !active && !done && (
-                <span className="ml-1 text-[10px] text-muted-foreground/70">
-                  (опц.)
-                </span>
-              )}
             </span>
           </div>
         );
@@ -62,6 +62,7 @@ export function FlowStepperV4({ product, current }: FlowStepperV4Props) {
               <Link
                 to="/v4/run/$productId/$step"
                 params={{ productId: product.id, step }}
+                search={search}
                 className="group"
               >
                 {inner}
@@ -69,7 +70,7 @@ export function FlowStepperV4({ product, current }: FlowStepperV4Props) {
             ) : (
               inner
             )}
-            {i < product.steps.length - 1 && (
+            {i < steps.length - 1 && (
               <div className={cn("h-px flex-1", done ? "bg-primary" : "bg-border")} />
             )}
           </li>
