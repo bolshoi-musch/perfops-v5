@@ -227,3 +227,114 @@ function Sidebar({
     </aside>
   );
 }
+
+function NavRow({
+  item,
+  path,
+  collapsed,
+}: {
+  item: NavItem;
+  path: string;
+  collapsed: boolean;
+}) {
+  const Icon = item.icon;
+  const active = item.exact
+    ? path === item.to
+    : path === item.to || path.startsWith(item.to + "/");
+  return (
+    <li>
+      <Link
+        to={item.to}
+        title={collapsed ? item.label : undefined}
+        className={cn(
+          "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+          active
+            ? "bg-accent text-accent-foreground"
+            : "text-foreground/80 hover:bg-muted hover:text-foreground",
+          collapsed && "justify-center px-0",
+        )}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        {!collapsed && <span className="truncate">{item.label}</span>}
+      </Link>
+    </li>
+  );
+}
+
+function ProductsNavGroup({
+  path,
+  collapsed,
+}: {
+  path: string;
+  collapsed: boolean;
+}) {
+  const sectionActive =
+    path === "/v4/products" || path.startsWith("/v4/products/");
+  const [open, setOpen] = useState<boolean>(sectionActive);
+
+  if (collapsed) {
+    return (
+      <NavRow
+        item={{ to: "/v4/products", label: "Продукты", icon: Boxes }}
+        path={path}
+        collapsed={collapsed}
+      />
+    );
+  }
+
+  return (
+    <li>
+      <div className="flex items-center gap-0.5">
+        <Link
+          to="/v4/products"
+          className={cn(
+            "flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+            sectionActive
+              ? "bg-accent text-accent-foreground"
+              : "text-foreground/80 hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <Boxes className="h-4 w-4 shrink-0" />
+          <span className="truncate">Продукты</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "Свернуть продукты" : "Развернуть продукты"}
+          aria-expanded={open}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          {open ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
+        </button>
+      </div>
+      {open && (
+        <ul className="mt-0.5 space-y-0.5 border-l border-border/60 pl-2">
+          {products.map((p) => {
+            const productPath = `/v4/products/${p.id}`;
+            const active = path === productPath;
+            return (
+              <li key={p.id}>
+                <Link
+                  to="/v4/products/$productId"
+                  params={{ productId: p.id }}
+                  className={cn(
+                    "block truncate rounded-md px-2 py-1 text-xs transition-colors",
+                    active
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {p.name}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </li>
+  );
+}
