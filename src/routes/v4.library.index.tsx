@@ -56,7 +56,6 @@ function LibraryPage() {
   return (
     <AppShellV4>
       <PageHeaderV4
-        eyebrow="Хранилище"
         title="Библиотека"
         subtitle="Источники и результаты, привязанные к проектам. Сортировка по дате обновления."
       />

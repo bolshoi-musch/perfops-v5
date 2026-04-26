@@ -35,7 +35,6 @@ function ConnectionDetailPage() {
         ]}
       />
       <PageHeaderV4
-        eyebrow="Подключение"
         title={connection.name}
         subtitle={connection.description}
         actions={
