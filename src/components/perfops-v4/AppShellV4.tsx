@@ -13,8 +13,11 @@ import {
   Wrench,
   Settings,
   Plus,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { products } from "@/lib/perfops-v4-data";
 
 interface NavItem {
   to: string;
@@ -23,9 +26,9 @@ interface NavItem {
   exact?: boolean;
 }
 
-const primaryNav: NavItem[] = [
-  { to: "/v4", label: "Главная", icon: Home, exact: true },
-  { to: "/v4/products", label: "Продукты", icon: Boxes },
+const homeNav: NavItem = { to: "/v4", label: "Главная", icon: Home, exact: true };
+
+const afterProductsNav: NavItem[] = [
   { to: "/v4/projects", label: "Проекты", icon: FolderKanban },
   { to: "/v4/library", label: "Библиотека", icon: LibraryIcon },
   { to: "/v4/connections", label: "Подключения", icon: Plug },
