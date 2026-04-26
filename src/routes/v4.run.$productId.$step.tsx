@@ -1306,6 +1306,7 @@ function CheckStep({
       <div className="lg:col-span-3">
         <FlowActionBar
           product={product}
+          steps={steps}
           current="check"
           projectId={projectId}
           nextSlot={
@@ -1328,7 +1329,15 @@ function CheckStep({
 
 // --------------------- Run ---------------------
 
-function RunStep({ product, projectId }: { product: Product; projectId: string }) {
+function RunStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
