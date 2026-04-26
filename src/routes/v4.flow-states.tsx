@@ -36,21 +36,45 @@ interface StateDef {
 }
 
 const toneStyles: Record<Tone, { dot: string; chip: string; label: string }> = {
-  neutral: { dot: "bg-muted-foreground/40", chip: "bg-muted text-muted-foreground border-border", label: "neutral" },
-  info: { dot: "bg-info", chip: "bg-info-soft text-info border-info/30", label: "info" },
-  success: { dot: "bg-success", chip: "bg-success-soft text-success border-success/30", label: "success" },
-  warning: { dot: "bg-warning", chip: "bg-warning-soft text-warning-foreground border-warning/30", label: "warning" },
-  blocked: { dot: "bg-destructive", chip: "bg-destructive-soft text-destructive border-destructive/30", label: "blocked" },
-  processing: { dot: "bg-primary", chip: "bg-accent text-accent-foreground border-primary/30", label: "processing" },
+  neutral: {
+    dot: "bg-muted-foreground/40",
+    chip: "bg-muted text-muted-foreground border-border",
+    label: "neutral",
+  },
+  info: {
+    dot: "bg-info",
+    chip: "bg-info-soft text-info border-info/30",
+    label: "info",
+  },
+  success: {
+    dot: "bg-success",
+    chip: "bg-success-soft text-success border-success/30",
+    label: "success",
+  },
+  warning: {
+    dot: "bg-warning",
+    chip: "bg-warning-soft text-warning-foreground border-warning/30",
+    label: "warning",
+  },
+  blocked: {
+    dot: "bg-destructive",
+    chip: "bg-destructive-soft text-destructive border-destructive/30",
+    label: "blocked",
+  },
+  processing: {
+    dot: "bg-primary",
+    chip: "bg-accent text-accent-foreground border-primary/30",
+    label: "processing",
+  },
 };
 
 const states: StateDef[] = [
   {
-    id: "idle-upload",
-    name: "Загрузка — ожидание",
+    id: "source-empty",
+    name: "Источник не выбран",
     tone: "neutral",
     description:
-      "Источник ещё не выбран. Пользователь может загрузить файл, выбрать подключённый аккаунт или источник из Библиотеки.",
+      "Пользователь может загрузить файл, выбрать подключённый аккаунт или источник из Библиотеки.",
     example: (
       <div className="rounded-md border border-dashed bg-surface px-4 py-6 text-center">
         <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
@@ -63,12 +87,23 @@ const states: StateDef[] = [
     id: "uploading",
     name: "Идёт загрузка",
     tone: "info",
-    description: "Файл передаётся на сервер. Прогресс виден пользователю.",
+    description: "Источник передаётся на сервер. Пользователь видит прогресс.",
     example: (
       <div className="flex items-center gap-3 rounded-md border bg-surface px-3 py-2 text-sm">
         <Loader2 className="h-4 w-4 animate-spin text-primary" />
         <span className="flex-1 text-foreground">campaign_export.xlsx</span>
         <span className="text-xs text-muted-foreground">68%</span>
+      </div>
+    ),
+  },
+  {
+    id: "source-selected",
+    name: "Источник выбран",
+    tone: "info",
+    description: "Источник добавлен и готов к проверке.",
+    example: (
+      <div className="flex items-center gap-2 rounded-md border bg-info-soft px-3 py-2 text-sm text-info">
+        <FileSpreadsheet className="h-4 w-4" /> campaign_export.xlsx — готов к проверке
       </div>
     ),
   },
@@ -84,24 +119,11 @@ const states: StateDef[] = [
     ),
   },
   {
-    id: "invalid-file",
-    name: "Файл невалиден",
-    tone: "blocked",
-    description: "Источник не соответствует требованиям и не может быть использован.",
-    example: (
-      <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm">
-        <p className="flex items-center gap-2 font-medium text-destructive">
-          <XCircle className="h-4 w-4" /> В файле не хватает обязательной колонки «Кампания»
-        </p>
-        <Button size="sm" variant="outline" className="mt-2">Загрузить другой файл</Button>
-      </div>
-    ),
-  },
-  {
-    id: "accepted-file",
-    name: "Файл принят",
+    id: "source-accepted",
+    name: "Источник принят",
     tone: "success",
-    description: "Источник прошёл проверку и готов к запуску.",
+    description:
+      "Источник соответствует требованиям продукта. Можно запускать обработку.",
     example: (
       <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
         <CheckCircle2 className="h-4 w-4" /> campaign_export.xlsx — 2 184 строки приняты
@@ -113,7 +135,7 @@ const states: StateDef[] = [
     name: "Предупреждение",
     tone: "warning",
     description:
-      "Источник можно использовать, но есть риски. Запуск разрешён, основная кнопка остаётся «Запустить».",
+      "Есть замечания, но они не блокируют запуск. Пользователь может продолжить или вернуться и исправить источник.",
     example: (
       <div className="rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm">
         <p className="flex items-center gap-2 font-medium text-warning-foreground">
@@ -130,13 +152,15 @@ const states: StateDef[] = [
     name: "Блокировка",
     tone: "blocked",
     description:
-      "Запуск невозможен из-за внешней причины: подключение, лимит, недоступность сервиса.",
+      "Запуск невозможен: источник или параметры не соответствуют обязательным требованиям.",
     example: (
       <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm">
         <p className="flex items-center gap-2 font-medium text-destructive">
-          <CircleSlash className="h-4 w-4" /> Подключение Яндекс Директ требует переподключения
+          <CircleSlash className="h-4 w-4" /> В файле не хватает обязательной колонки «Кампания»
         </p>
-        <Button size="sm" variant="outline" className="mt-2">Перейти к подключениям</Button>
+        <Button size="sm" variant="outline" className="mt-2">
+          Загрузить другой файл
+        </Button>
       </div>
     ),
   },
@@ -144,7 +168,8 @@ const states: StateDef[] = [
     id: "processing",
     name: "Идёт обработка",
     tone: "processing",
-    description: "Запуск выполняется. Пользователь может вернуться позже.",
+    description:
+      "Продукт выполняет обработку. Пользователь может вернуться позже.",
     example: (
       <div className="flex items-center gap-3 rounded-md border bg-accent px-3 py-2 text-sm">
         <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -153,25 +178,10 @@ const states: StateDef[] = [
     ),
   },
   {
-    id: "local-result",
-    name: "Локальный результат готов",
-    tone: "info",
-    description: "Артефакт рассчитан, но ещё не сохранён в Библиотеке.",
-    example: (
-      <div className="flex items-center gap-3 rounded-md border bg-surface px-3 py-2 text-sm">
-        <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-        <span className="flex-1 text-foreground">Кросс-минус — 25.04.2026.xlsx</span>
-        <Button size="sm" variant="outline">
-          <Download className="h-3 w-3" /> Скачать локальную копию
-        </Button>
-      </div>
-    ),
-  },
-  {
-    id: "result-saved",
-    name: "Результат сохранён в Библиотеке",
+    id: "result-ready",
+    name: "Результат готов",
     tone: "success",
-    description: "Результат успешно сохранён в Библиотеке и доступен команде.",
+    description: "Результат создан и сохранён в Библиотеке.",
     example: (
       <div className="rounded-md border border-success/30 bg-success-soft px-3 py-2 text-sm">
         <p className="flex items-center gap-2 font-medium text-success">
@@ -181,7 +191,9 @@ const states: StateDef[] = [
           <Button size="sm">
             <ExternalLink className="h-3 w-3" /> Открыть результат
           </Button>
-          <Button size="sm" variant="outline">Открыть Библиотеку</Button>
+          <Button size="sm" variant="outline">
+            Открыть Библиотеку
+          </Button>
         </div>
       </div>
     ),
@@ -191,7 +203,7 @@ const states: StateDef[] = [
     name: "Результат готов, но не сохранён в Библиотеке",
     tone: "warning",
     description:
-      "Результат рассчитан, но не сохранён в Библиотеке. Можно повторить сохранение или скачать локальную копию.",
+      "Результат создан локально, но сохранить его в Библиотеке не удалось. Пользователь может повторить сохранение или скачать локальную копию.",
     example: (
       <div className="rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm">
         <p className="flex items-center gap-2 font-medium text-warning-foreground">
@@ -212,11 +224,14 @@ const states: StateDef[] = [
     id: "save-retry",
     name: "Повторное сохранение",
     tone: "processing",
-    description: "Платформа повторно пытается сохранить готовый результат в Библиотеке.",
+    description:
+      "Платформа повторно пытается сохранить результат в Библиотеке.",
     example: (
       <div className="flex items-center gap-2 rounded-md border bg-accent px-3 py-2 text-sm">
         <Loader2 className="h-4 w-4 animate-spin text-primary" />
-        <span className="text-foreground">Повторное сохранение результата… (попытка 2 из 3)</span>
+        <span className="text-foreground">
+          Повторное сохранение результата… (попытка 2 из 3)
+        </span>
       </div>
     ),
   },
@@ -225,7 +240,7 @@ const states: StateDef[] = [
     name: "Сохранить результат не удалось",
     tone: "blocked",
     description:
-      "Терминальная ошибка сохранения. Локальную копию можно скачать, далее — обращение в поддержку.",
+      "Результат не удалось сохранить после повторных попыток. Пользователь может скачать локальную копию или обратиться в поддержку.",
     example: (
       <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm">
         <p className="flex items-center gap-2 font-medium text-destructive">
@@ -250,7 +265,7 @@ function FlowStatesPage() {
       <PageHeaderV4
         eyebrow="Внутренний справочник"
         title="Справочник состояний"
-        subtitle="Состояния продуктовых сценариев — от выбора источника до сохранения результата в Библиотеке."
+        subtitle="Все состояния продуктовых сценариев — от выбора источника до сохранения результата."
       />
       <div className="grid gap-3 lg:grid-cols-2">
         {states.map((s) => {

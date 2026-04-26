@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
   getProduct,
+  products,
   projects,
   resultFormatLabel,
   semanticsScenarios,
@@ -24,12 +25,15 @@ import {
   metricGroupLabel,
   connectionTypes,
   libraryEntries,
+  libraryKindLabel,
+  formatLabel,
   sourceKindLabel,
   type Product,
   type StepId,
   type SourceKind,
   type SemanticsScenarioGroup,
   type MetricGroup,
+  type LibraryEntry,
   stepLabel,
   getNextStep,
 } from "@/lib/perfops-v4-data";
@@ -49,6 +53,8 @@ import {
   ArrowRight,
   Plus,
   X,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 
 const stepSchema = z.enum([
@@ -247,16 +253,17 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
   const [activeKind, setActiveKind] = useState<SourceKind>(product.allowedSources[0]);
   const [secondKind, setSecondKind] = useState<SourceKind>(product.allowedSources[0]);
   const [hasFile, setHasFile] = useState(true);
+  const [hasSecondFile, setHasSecondFile] = useState(false);
   const [secondSourceOpen, setSecondSourceOpen] = useState(false);
 
   const sourceHelp: string[] = [
     `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
     ...(product.supportedConnections.length > 0
-      ? ["Можно выбрать подключение"]
+      ? ["Можно выбрать подключённый аккаунт"]
       : []),
     "Можно выбрать источник из Библиотеки",
     ...(product.supportsSecondSource
-      ? ["Можно добавить второй источник"]
+      ? ["Второй источник равноправен первому: те же варианты"]
       : []),
   ];
 
@@ -360,10 +367,9 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
                   <SourcePanel
                     kind={secondKind}
                     product={product}
-                    hasFile={false}
-                    onAttachFile={() => undefined}
-                    onClearFile={() => undefined}
-                    secondary
+                    hasFile={hasSecondFile}
+                    onAttachFile={() => setHasSecondFile(true)}
+                    onClearFile={() => setHasSecondFile(false)}
                   />
                 </div>
               )}
@@ -387,17 +393,15 @@ function SourcePanel({
   hasFile,
   onAttachFile,
   onClearFile,
-  secondary,
 }: {
   kind: SourceKind;
   product: Product;
   hasFile: boolean;
   onAttachFile: () => void;
   onClearFile: () => void;
-  secondary?: boolean;
 }) {
   if (kind === "upload") {
-    if (hasFile && !secondary) {
+    if (hasFile) {
       return (
         <div className="flex items-center justify-between gap-3 rounded-md border bg-success-soft px-3 py-2.5 text-sm">
           <div className="flex min-w-0 items-center gap-2">
@@ -431,62 +435,11 @@ function SourcePanel({
   }
 
   if (kind === "connection") {
-    const conns = connectionTypes.filter(
-      (c) => product.supportedConnections.includes(c.id) && c.accounts.some((a) => a.status === "connected"),
-    );
-    return (
-      <ul className="divide-y rounded-md border">
-        {conns.flatMap((c) =>
-          c.accounts
-            .filter((a) => a.status === "connected")
-            .map((a) => (
-              <li
-                key={a.id}
-                className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-surface"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm text-foreground">{a.name}</p>
-                  <p className="truncate text-[11px] text-muted-foreground">
-                    {c.name} · {a.identifier}
-                  </p>
-                </div>
-                <Button size="sm" variant="outline">
-                  Выбрать
-                </Button>
-              </li>
-            )),
-        )}
-        {conns.length === 0 && (
-          <li className="px-3 py-3 text-sm text-muted-foreground">
-            Подходящих подключений нет — добавьте их в разделе «Подключения».
-          </li>
-        )}
-      </ul>
-    );
+    return <ConnectedAccountPicker product={product} />;
   }
 
   if (kind === "library") {
-    const candidates = libraryEntries.filter((e) => e.kind === "source");
-    return (
-      <ul className="divide-y rounded-md border">
-        {candidates.map((e) => (
-          <li
-            key={e.id}
-            className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-surface"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm text-foreground">{e.name}</p>
-              <p className="truncate text-[11px] text-muted-foreground">
-                Проект: {e.projectName} · обновлено {e.updated}
-              </p>
-            </div>
-            <Button size="sm" variant="outline">
-              Выбрать
-            </Button>
-          </li>
-        ))}
-      </ul>
-    );
+    return <LibrarySourcePicker product={product} />;
   }
 
   if (kind === "topic") {
@@ -517,6 +470,278 @@ function SourcePanel({
 
   return null;
 }
+
+// --------------------- Connected account picker (grouped by system) ---------------------
+
+function ConnectedAccountPicker({ product }: { product: Product }) {
+  const groups = connectionTypes.filter((c) =>
+    product.supportedConnections.includes(c.id),
+  );
+  const initialOpen = groups.find((g) =>
+    g.accounts.some((a) => a.status === "connected"),
+  );
+  const [openId, setOpenId] = useState<string | null>(initialOpen?.id ?? null);
+  const [selected, setSelected] = useState<{
+    typeId: string;
+    typeName: string;
+    accountId: string;
+    accountName: string;
+    identifier: string;
+  } | null>(null);
+
+  if (selected) {
+    return (
+      <div className="rounded-md border bg-success-soft px-3 py-2.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              {selected.accountName}
+              <span className="rounded-md border border-success/30 bg-card px-1.5 py-0.5 text-[10px] font-medium text-success">
+                принят
+              </span>
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {selected.typeName} · {selected.identifier}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>
+              Удалить
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setSelected(null)}>
+              Заменить
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (groups.length === 0) {
+    return (
+      <p className="rounded-md border bg-surface px-3 py-3 text-sm text-muted-foreground">
+        Этот продукт не использует подключения.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {groups.map((group) => {
+        const isOpen = openId === group.id;
+        const connectedCount = group.accounts.filter(
+          (a) => a.status === "connected",
+        ).length;
+        return (
+          <div key={group.id} className="overflow-hidden rounded-md border bg-card">
+            <button
+              type="button"
+              onClick={() => setOpenId(isOpen ? null : group.id)}
+              className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-surface"
+              aria-expanded={isOpen}
+            >
+              <span className="flex items-center gap-2">
+                {isOpen ? (
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
+                <span className="text-sm font-medium text-foreground">{group.name}</span>
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {group.accounts.length === 0
+                  ? "нет подключений"
+                  : `${connectedCount} из ${group.accounts.length}`}
+              </span>
+            </button>
+            {isOpen && (
+              <ul className="divide-y border-t">
+                {group.accounts.length === 0 && (
+                  <li className="px-3 py-2.5 text-xs text-muted-foreground">
+                    Нет подключённых аккаунтов. Добавьте подключение в разделе «Подключения».
+                  </li>
+                )}
+                {group.accounts.map((a) => {
+                  const usable = a.status === "connected";
+                  return (
+                    <li
+                      key={a.id}
+                      className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-surface"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-foreground">{a.name}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {a.identifier}
+                          {!usable && " · требуется действие"}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!usable}
+                        onClick={() =>
+                          setSelected({
+                            typeId: group.id,
+                            typeName: group.name,
+                            accountId: a.id,
+                            accountName: a.name,
+                            identifier: a.identifier,
+                          })
+                        }
+                      >
+                        Выбрать
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// --------------------- Library source picker (search + filters) ---------------------
+
+function LibrarySourcePicker({ product }: { product: Product }) {
+  const [query, setQuery] = useState("");
+  const [productFilter, setProductFilter] = useState<string>("all");
+  const [kindFilter, setKindFilter] = useState<"all" | "source" | "result">("all");
+  const [visible, setVisible] = useState(5);
+  const [selected, setSelected] = useState<LibraryEntry | null>(null);
+
+  if (selected) {
+    return (
+      <div className="rounded-md border bg-success-soft px-3 py-2.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              {selected.name}
+              <span className="rounded-md border border-success/30 bg-card px-1.5 py-0.5 text-[10px] font-medium text-success">
+                принят
+              </span>
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {libraryKindLabel[selected.kind]} · {formatLabel(selected.format)} · {selected.projectName} · обновлено {selected.updated}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>
+              Удалить
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setSelected(null)}>
+              Заменить
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const filtered = libraryEntries
+    .filter((e) =>
+      kindFilter === "all" ? true : e.kind === kindFilter,
+    )
+    .filter((e) => (productFilter === "all" ? true : e.productId === productFilter))
+    .filter((e) =>
+      query.trim() === ""
+        ? true
+        : e.name.toLowerCase().includes(query.trim().toLowerCase()),
+    )
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+  const slice = filtered.slice(0, visible);
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Поиск по названию"
+          className="h-9 text-sm"
+        />
+        <select
+          value={productFilter}
+          onChange={(e) => setProductFilter(e.target.value)}
+          className="h-9 rounded-md border bg-card px-2 text-xs text-foreground"
+          aria-label="Фильтр по продукту"
+        >
+          <option value="all">Все продукты</option>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <div className="flex h-9 items-center rounded-md border bg-card p-0.5 text-xs">
+          {(["all", "source", "result"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setKindFilter(k)}
+              className={cn(
+                "rounded-sm px-2 py-1 transition-colors",
+                kindFilter === k
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {k === "all" ? "Все" : k === "source" ? "Источники" : "Результаты"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-md border bg-card">
+        {slice.length === 0 ? (
+          <p className="px-3 py-4 text-sm text-muted-foreground">
+            Ничего не найдено. Уточните запрос или фильтры.
+          </p>
+        ) : (
+          <ul className="divide-y">
+            {slice.map((e) => (
+              <li
+                key={e.id}
+                className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-surface"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-foreground">{e.name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {libraryKindLabel[e.kind]} · {formatLabel(e.format)} ·{" "}
+                    {e.projectName}
+                    {e.productId && ` · ${getProduct(e.productId).name}`}{" "}
+                    · обновлено {e.updated}
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setSelected(e)}>
+                  Выбрать
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {visible < filtered.length && (
+        <div className="text-center">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setVisible((v) => v + 5)}
+          >
+            Показать ещё ({filtered.length - visible})
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 // --------------------- Combining ---------------------
 
