@@ -13,7 +13,6 @@ function ProductsPage() {
   return (
     <AppShellV4>
       <PageHeaderV4
-        eyebrow="Каталог"
         title="Продукты"
         subtitle="Выберите продукт, чтобы посмотреть описание или создать проект."
       />
