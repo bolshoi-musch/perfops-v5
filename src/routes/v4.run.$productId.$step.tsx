@@ -367,10 +367,9 @@ function SourceStep({ product, projectId }: { product: Product; projectId: strin
                   <SourcePanel
                     kind={secondKind}
                     product={product}
-                    hasFile={false}
-                    onAttachFile={() => undefined}
-                    onClearFile={() => undefined}
-                    secondary
+                    hasFile={hasSecondFile}
+                    onAttachFile={() => setHasSecondFile(true)}
+                    onClearFile={() => setHasSecondFile(false)}
                   />
                 </div>
               )}
