@@ -21,6 +21,7 @@ import {
   getProduct,
   type ProductId,
   resultFormatLabel,
+  stepLabel,
 } from "@/lib/perfops-v4-data";
 
 const searchSchema = z.object({
@@ -83,7 +84,6 @@ function NewProjectPage() {
         ]}
       />
       <PageHeaderV4
-        eyebrow="Создание"
         title="Новый проект"
         subtitle="Заполните основные параметры. Источник выбирается на следующем шаге."
       />
@@ -166,25 +166,35 @@ function NewProjectPage() {
           <Card className="border bg-card shadow-none">
             <CardContent className="p-5">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Что вы получите
+                Результат
               </p>
               <p className="mt-1 text-sm font-medium text-foreground">
                 {resultFormatLabel[product.resultFormat]}
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {product.shortDescription}
               </p>
             </CardContent>
           </Card>
           <Card className="border bg-card shadow-none">
             <CardContent className="p-5">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Что дальше
+                Дальнейшие шаги
               </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                После создания проекта откроется первый шаг — выбор источника.
-                Все настройки можно поменять без потери данных проекта.
-              </p>
+              <ol className="mt-2 space-y-1 text-xs text-muted-foreground">
+                {product.steps
+                  .filter((s) => s !== "combining")
+                  .map((s, i) => (
+                    <li key={s} className="flex items-start gap-2">
+                      <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border bg-card text-[10px] text-foreground">
+                        {i + 1}
+                      </span>
+                      <span>{stepLabel[s]}</span>
+                    </li>
+                  ))}
+              </ol>
+              {product.supportsCombining && (
+                <p className="mt-3 text-[11px] text-muted-foreground">
+                  Шаг «Объединение» появится, если вы добавите второй источник.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
