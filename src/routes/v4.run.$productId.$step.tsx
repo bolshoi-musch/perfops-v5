@@ -1005,7 +1005,15 @@ function PlanRow({
 
 // --------------------- Params ---------------------
 
-function ParamsStep({ product, projectId }: { product: Product; projectId: string }) {
+function ParamsStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
   if (product.id === "semantics-generator") {
     return (
       <div className="grid gap-4 lg:grid-cols-3">
@@ -1039,7 +1047,12 @@ function ParamsStep({ product, projectId }: { product: Product; projectId: strin
           ]}
         />
         <div className="lg:col-span-3">
-          <FlowActionBar product={product} current="params" projectId={projectId} />
+          <FlowActionBar
+            product={product}
+            steps={steps}
+            current="params"
+            projectId={projectId}
+          />
         </div>
       </div>
     );
@@ -1061,7 +1074,12 @@ function ParamsStep({ product, projectId }: { product: Product; projectId: strin
         items={["Параметры можно поменять позже без потери источника"]}
       />
       <div className="lg:col-span-3">
-        <FlowActionBar product={product} current="params" projectId={projectId} />
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="params"
+          projectId={projectId}
+        />
       </div>
     </div>
   );
@@ -1089,8 +1107,16 @@ function ParamRow({
 
 // --------------------- Metrics & focus (campaign-analysis) ---------------------
 
-function MetricsStep({ product, projectId }: { product: Product; projectId: string }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set(["cpa"]));
+function MetricsStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(["cpa", "clicks"]));
   const toggle = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
@@ -1173,6 +1199,7 @@ function MetricsStep({ product, projectId }: { product: Product; projectId: stri
       <div className="lg:col-span-3">
         <FlowActionBar
           product={product}
+          steps={steps}
           current="metrics"
           projectId={projectId}
           nextDisabled={selected.size === 0 || !hasAbsolute}
@@ -1184,8 +1211,17 @@ function MetricsStep({ product, projectId }: { product: Product; projectId: stri
 
 // --------------------- Check ---------------------
 
-function CheckStep({ product, projectId }: { product: Product; projectId: string }) {
-  const next = getNextStep(product, "check");
+function CheckStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
+  const idx = steps.indexOf("check");
+  const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : undefined;
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
