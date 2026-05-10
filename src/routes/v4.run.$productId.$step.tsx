@@ -2225,19 +2225,28 @@ function RunStep({
   const isSemantics = product.id === "semantics-generator";
   const isCampaignAnalysis = product.id === "campaign-analysis";
   const isCrossMinus = product.id === "cross-minus";
+  const isBd = product.id === "bd-optimization";
+  const bdScenario =
+    isBd && search.scenario && BD_SCENARIOS.some((s) => s.id === search.scenario)
+      ? search.scenario
+      : "cannib";
   const navSearch: Record<string, unknown> = search.scenario ? { scenario: search.scenario } : {};
   const headline = isCampaignAnalysis
     ? "Анализ выполняется"
     : isCrossMinus
       ? "Считаем кросс-минусовку"
-      : `${product.name} — идёт обработка`;
+      : isBd
+        ? `BD Optimization · ${bdScenarioName(bdScenario)}`
+        : `${product.name} — идёт обработка`;
   const eta = isSemantics
     ? "Подготовка Excel-файла · ~3–5 мин"
     : isCampaignAnalysis
       ? "Подготовка аналитического отчёта · ~2–3 мин"
       : isCrossMinus
         ? "Подготовка Excel-файла · ~1–3 мин"
-        : "Подготовка результата · ~2 мин";
+        : isBd
+          ? "Подготовка Excel-файла · ~1–3 мин"
+          : "Подготовка результата · ~2 мин";
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
