@@ -1748,6 +1748,35 @@ function CheckStep({
                       <dd className="text-foreground">{semanticsScenarioName(scenario)}</dd>
                     </>
                   )
+                ) : isCrossMinus ? (
+                  <>
+                    <dt className="text-muted-foreground">Формат</dt>
+                    <dd className="text-foreground">XLSX · 2,1 МБ</dd>
+                    <dt className="text-muted-foreground">Строк всего</dt>
+                    <dd className="text-foreground">8 412</dd>
+                    <dt className="text-muted-foreground">Кампаний</dt>
+                    <dd className="text-foreground">14</dd>
+                    <dt className="text-muted-foreground">Ключевых фраз</dt>
+                    <dd className="text-foreground">7 906</dd>
+                    <dt className="text-muted-foreground">Строк с показами</dt>
+                    <dd className="text-foreground">
+                      {state === "warning" ? "8 100 (312 без показов)" : "8 412"}
+                    </dd>
+                    <dt className="text-muted-foreground">Обязательные колонки</dt>
+                    <dd className="text-foreground">
+                      {state === "blocked"
+                        ? "Кампания, Фраза — найдены; Показы — не найдена"
+                        : "Кампания, Фраза, Показы — найдены"}
+                    </dd>
+                    <dt className="text-muted-foreground">Пересечения</dt>
+                    <dd className="text-foreground">
+                      {state === "blocked"
+                        ? "не определены"
+                        : state === "warning"
+                          ? "мало — результат может быть коротким"
+                          : "достаточно для расчёта"}
+                    </dd>
+                  </>
                 ) : (
                   <>
                     <dt className="text-muted-foreground">Строк</dt>
