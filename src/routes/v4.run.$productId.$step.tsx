@@ -1839,6 +1839,9 @@ function RunStep({
   projectId: string;
   steps: StepId[];
 }) {
+  const search = Route.useSearch() as RunnerSearch;
+  const isSemantics = product.id === "semantics-generator";
+  const navSearch: Record<string, unknown> = search.scenario ? { scenario: search.scenario } : {};
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
@@ -1850,16 +1853,30 @@ function RunStep({
                 {product.name} — идёт обработка
               </p>
               <p className="text-xs text-muted-foreground">
-                Подготовка результата · ~2 мин
+                {isSemantics
+                  ? "Подготовка Excel-файла · ~3–5 мин"
+                  : "Подготовка результата · ~2 мин"}
               </p>
             </div>
           </div>
           <Progress value={62} className="h-1.5" />
           <ul className="space-y-1 text-xs text-muted-foreground">
-            <li>· Читаем источник</li>
-            <li>· Проверяем структуру</li>
-            <li className="text-foreground">· Формируем результат…</li>
-            <li>· Сохраняем в Библиотеке</li>
+            {isSemantics ? (
+              <>
+                <li>· Читаем источник</li>
+                <li>· Собираем фразы</li>
+                <li className="text-foreground">· Дедуплицируем и фильтруем…</li>
+                <li>· Формируем Excel</li>
+                <li>· Сохраняем в Библиотеке</li>
+              </>
+            ) : (
+              <>
+                <li>· Читаем источник</li>
+                <li>· Проверяем структуру</li>
+                <li className="text-foreground">· Формируем результат…</li>
+                <li>· Сохраняем в Библиотеке</li>
+              </>
+            )}
           </ul>
           <p className="rounded-md border bg-surface px-3 py-2 text-xs text-muted-foreground">
             Можно безопасно вернуться позже — результат появится в Библиотеке.
@@ -1880,11 +1897,13 @@ function RunStep({
           steps={steps}
           current="run"
           projectId={projectId}
+          search={navSearch}
           nextSlot={
             <Button asChild>
               <Link
                 to="/v4/run/$productId/$step"
                 params={{ productId: product.id, step: "result" }}
+                search={navSearch}
               >
                 Посмотреть результат (демо) <ArrowRight className="h-3.5 w-3.5" />
               </Link>
