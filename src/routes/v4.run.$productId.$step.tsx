@@ -68,18 +68,34 @@ const stepSchema = z.enum([
   "result",
 ]);
 
-// Search params for the runner — currently just whether a second source is
-// active (drives the dynamic "Объединение" step in the stepper).
-type RunnerSearch = { second?: number };
+// Search params for the runner.
+//   second   — second source active (dashboard-builder dynamic "Combining" step)
+//   clarify  — show inline "unrecognized metrics" block on the metrics step
+//   state    — drives the diagnostic state of the check step
+//   dashboard — adds optional "Open dashboard" CTA on analytics-report result
+type CheckState = "clean" | "warning" | "blocked";
+type RunnerSearch = {
+  second?: number;
+  clarify?: number;
+  state?: CheckState;
+  dashboard?: number;
+};
 const searchSchema = z.object({
   second: z.coerce.number().optional(),
+  clarify: z.coerce.number().optional(),
+  state: z.enum(["clean", "warning", "blocked"]).optional(),
+  dashboard: z.coerce.number().optional(),
 });
+
+const PROCESS_TITLES: Record<string, string> = {
+  "dashboard-builder": "Подготовка дашборда",
+  "campaign-analysis": "Анализ рекламных кампаний",
+};
 
 export const Route = createFileRoute("/v4/run/$productId/$step")({
   head: ({ params }) => {
     const stepName = stepLabel[params.step as StepId] ?? "Шаг";
-    const processTitle =
-      params.productId === "dashboard-builder" ? "Подготовка дашборда" : null;
+    const processTitle = PROCESS_TITLES[params.productId] ?? null;
     const title = processTitle
       ? `${stepName} — ${processTitle} — PerfOps`
       : `${stepName} — PerfOps`;
