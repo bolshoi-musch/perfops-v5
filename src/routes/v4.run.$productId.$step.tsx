@@ -239,9 +239,7 @@ function titleFor(step: StepId, product: Product): string {
 }
 
 /** Process title displayed inside the runner — not the user-facing product name. */
-function processTitleFor(product: Product): string | undefined {
-  return PROCESS_TITLES[product.id];
-}
+// (currently surfaced only via head meta in PROCESS_TITLES)
 
 function subtitleFor(step: StepId, product: Product): string | undefined {
   switch (step) {
