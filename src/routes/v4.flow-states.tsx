@@ -804,6 +804,48 @@ function FlowStatesPage() {
           })}
         </div>
       </section>
+
+      {/* Subsection: how the same tones look inside «Сбор и обработка семантики». */}
+      <section className="mt-10 border-t pt-6">
+        <h2 className="text-base font-semibold text-foreground">
+          Пример: Сбор и обработка семантики
+        </h2>
+        <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+          Те же общие тональности, применённые к процессу сбора и обработки
+          семантики. Тоны и компоненты не меняются.
+        </p>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {semanticsExamples.map((s, i) => {
+            const tone = toneStyles[s.tone];
+            return (
+              <Card key={i} className="border bg-card shadow-none">
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {s.group}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
+                        {s.title}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-mono lowercase",
+                        tone.chip,
+                      )}
+                    >
+                      {tone.label}
+                    </span>
+                  </div>
+                  <div className="rounded-md border-t pt-3">{s.example}</div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
     </AppShellV4>
   );
 }
