@@ -86,6 +86,10 @@ type RunnerSearch = {
   scenario?: string;
   saved?: number;
   save?: SaveState;
+  // bd-optimization specific
+  stats?: number;     // 1 — stats-файл прикреплён (для демо состояния источника)
+  multisheet?: number; // 1 — обнаружен multi-sheet файл (показать SheetSelector)
+  mismatch?: number;   // 1 — на check показать blocked-substate "сценарий не совпал"
 };
 const searchSchema = z.object({
   second: z.coerce.number().optional(),
@@ -95,6 +99,9 @@ const searchSchema = z.object({
   scenario: z.string().optional(),
   saved: z.coerce.number().optional(),
   save: z.enum(["ok", "error"]).optional(),
+  stats: z.coerce.number().optional(),
+  multisheet: z.coerce.number().optional(),
+  mismatch: z.coerce.number().optional(),
 });
 
 // ---- Semantics scenarios: per-scenario source/params config ----
@@ -126,7 +133,26 @@ const PROCESS_TITLES: Record<string, string> = {
   "campaign-analysis": "Анализ рекламных кампаний",
   "semantics-generator": "Сбор и обработка семантики",
   "cross-minus": "Кросс-минусовка",
+  "bd-optimization": "BD Optimization",
 };
+
+// ---- BD Optimization scenarios ----
+const BD_SCENARIOS = [
+  {
+    id: "cannib",
+    name: "Каннибализация",
+    description:
+      "Ищем пересечения между запросами и оцениваем, какие запросы перетягивают трафик.",
+  },
+  {
+    id: "losses",
+    name: "Атрибуцированные потери",
+    description:
+      "Считаем потери, которые приписаны другим запросам, и долю этих потерь.",
+  },
+] as const;
+const bdScenarioName = (id?: string) =>
+  BD_SCENARIOS.find((s) => s.id === id)?.name ?? "Не выбран";
 
 export const Route = createFileRoute("/v4/run/$productId/$step")({
   head: ({ params }) => {
@@ -450,6 +476,7 @@ function SourceStep({
     });
   };
 
+  const isBd = product.id === "bd-optimization";
   const sourceHelp: string[] = isSemantics
     ? [
         scenario === "cluster"
@@ -462,16 +489,23 @@ function SourceStep({
           ? ["Текстовый столбец определим автоматически — указать его можно в параметрах"]
           : []),
       ]
-    : [
-        `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
-        ...(product.supportedConnections.length > 0
-          ? ["Можно выбрать подключённый аккаунт"]
-          : []),
-        "Можно выбрать источник из Библиотеки",
-        ...(product.supportsSecondSource
-          ? ["Второй источник равноправен первому: те же варианты"]
-          : []),
-      ];
+    : isBd
+      ? [
+          "Нужна выгрузка с поисковыми запросами или фразами, расходами, кликами и (по возможности) конверсиями",
+          "Поддерживаются: .xlsx, .csv · до 100 МБ",
+          "Можно выбрать подключённый аккаунт или источник из Библиотеки",
+          "Дополнительный файл со статистикой запросов уточняет конверсии",
+        ]
+      : [
+          `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
+          ...(product.supportedConnections.length > 0
+            ? ["Можно выбрать подключённый аккаунт"]
+            : []),
+          "Можно выбрать источник из Библиотеки",
+          ...(product.supportsSecondSource
+            ? ["Второй источник равноправен первому: те же варианты"]
+            : []),
+        ];
 
   const navSearch: Record<string, unknown> = {};
   if (hasSecondSource) navSearch.second = 1;
@@ -520,6 +554,8 @@ function SourceStep({
             </div>
           </CardContent>
         </Card>
+
+        {isBd && <BdStatsSlot />}
 
         {product.supportsSecondSource && (
           <Card className="border border-dashed bg-card shadow-none">
@@ -994,6 +1030,65 @@ function LibrarySourcePicker({ product }: { product: Product }) {
   );
 }
 
+// --------------------- BD Optimization: stats slot on Source step ---------------------
+
+function BdStatsSlot() {
+  const search = Route.useSearch() as RunnerSearch;
+  const navigate = useNavigate();
+  const params = Route.useParams();
+  const attached = search.stats === 1;
+  const setStats = (on: boolean) => {
+    const next: Record<string, unknown> = { ...search };
+    if (on) next.stats = 1;
+    else delete next.stats;
+    navigate({
+      to: "/v4/run/$productId/$step",
+      params: { productId: params.productId, step: "source" },
+      search: next,
+      replace: true,
+    });
+  };
+  return (
+    <Card className="border border-dashed bg-card shadow-none">
+      <CardContent className="p-5">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Дополнительный файл · Статистика поисковых запросов
+          </p>
+          <span className="text-[11px] text-muted-foreground">опционально</span>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Уточняет конверсии по запросам. Колонки: «Поисковый запрос», «Конверсии».
+          Форматы: .xlsx, .csv.
+        </p>
+        {attached ? (
+          <div className="flex items-center justify-between gap-3 rounded-md border bg-success-soft px-3 py-2.5 text-sm">
+            <div className="flex min-w-0 items-center gap-2">
+              <FileSpreadsheet className="h-4 w-4 shrink-0 text-success" />
+              <span className="truncate font-medium text-foreground">
+                query_stats.xlsx
+              </span>
+              <span className="text-xs text-muted-foreground">· 86 КБ · принят</span>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button size="sm" variant="ghost" onClick={() => setStats(false)}>
+                Удалить
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setStats(true)}>
+                Заменить
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setStats(true)}>
+            <Upload className="h-3.5 w-3.5" /> Добавить файл со статистикой
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 // --------------------- Combining ---------------------
 
@@ -1172,6 +1267,9 @@ function ParamsStep({
 }) {
   if (product.id === "semantics-generator") {
     return <SemanticsParamsStep product={product} projectId={projectId} steps={steps} />;
+  }
+  if (product.id === "bd-optimization") {
+    return <BdOptimizationParamsStep product={product} projectId={projectId} steps={steps} />;
   }
 
   return (
@@ -1611,6 +1709,157 @@ function MetricsStep({
   );
 }
 
+// --------------------- BD Optimization params ---------------------
+
+function BdOptimizationParamsStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
+  const search = Route.useSearch() as RunnerSearch;
+  const navigate = useNavigate();
+  // Default to "cannib" if scenario not in BD set yet.
+  const scenario =
+    search.scenario && BD_SCENARIOS.some((s) => s.id === search.scenario)
+      ? search.scenario
+      : "cannib";
+  const isMultiSheet = search.multisheet === 1;
+  const setScenario = (id: string) => {
+    navigate({
+      to: "/v4/run/$productId/$step",
+      params: { productId: product.id, step: "params" },
+      search: { ...search, scenario: id },
+      replace: true,
+    });
+  };
+  const [sheetMode, setSheetMode] = useState<"all" | "single">("all");
+  const [sheetName, setSheetName] = useState<string>("Поисковые запросы");
+  const sheetNames = ["Поисковые запросы", "Кампании", "Группы объявлений", "Сводка"];
+
+  const navSearch: Record<string, unknown> = { ...search };
+  // strip url-only flags from forward navigation
+  if (!navSearch.scenario) navSearch.scenario = scenario;
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <Card className="border bg-card shadow-none lg:col-span-2">
+        <CardContent className="space-y-5 p-5">
+          <div>
+            <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+              Сценарий
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {BD_SCENARIOS.map((s) => {
+                const active = scenario === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setScenario(s.id)}
+                    className={cn(
+                      "rounded-md border bg-card px-3 py-2.5 text-left transition-colors",
+                      active
+                        ? "border-primary ring-1 ring-primary/30"
+                        : "hover:border-border-strong",
+                    )}
+                  >
+                    <p className="text-sm font-medium text-foreground">{s.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {s.description}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {isMultiSheet && (
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                Листы файла
+              </p>
+              <p className="mb-2 text-xs text-muted-foreground">
+                В файле найдено несколько листов. Выберите, что обрабатывать.
+              </p>
+              <div className="space-y-2">
+                <label className="flex cursor-pointer items-start gap-2 rounded-md border bg-card px-3 py-2 hover:border-border-strong">
+                  <input
+                    type="radio"
+                    name="bd-sheets"
+                    checked={sheetMode === "all"}
+                    onChange={() => setSheetMode("all")}
+                    className="mt-1 h-3.5 w-3.5 accent-primary"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      Обработать все листы
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Соберём данные со всех листов в один расчёт.
+                    </p>
+                  </div>
+                </label>
+                <label className="flex cursor-pointer items-start gap-2 rounded-md border bg-card px-3 py-2 hover:border-border-strong">
+                  <input
+                    type="radio"
+                    name="bd-sheets"
+                    checked={sheetMode === "single"}
+                    onChange={() => setSheetMode("single")}
+                    className="mt-1 h-3.5 w-3.5 accent-primary"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Выбрать один лист
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Расчёт пойдёт только по выбранному листу.
+                    </p>
+                    {sheetMode === "single" && (
+                      <select
+                        value={sheetName}
+                        onChange={(e) => setSheetName(e.target.value)}
+                        className="mt-2 h-8 rounded-md border bg-card px-2 text-xs text-foreground"
+                      >
+                        {sheetNames.map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      <HelpCard
+        title="Подсказки"
+        items={[
+          "Сценарий определяет набор обязательных колонок и метрик в Excel-файле",
+          isMultiSheet
+            ? "Можно сменить сценарий или выбор листа без повторной загрузки"
+            : "Сменить сценарий можно без повторной загрузки источника",
+        ]}
+      />
+      <div className="lg:col-span-3">
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="params"
+          projectId={projectId}
+          search={navSearch}
+        />
+      </div>
+    </div>
+  );
+}
+
 // --------------------- Check ---------------------
 
 function CheckStep({
@@ -1627,13 +1876,26 @@ function CheckStep({
   const scenario = search.scenario;
   const isSemantics = product.id === "semantics-generator";
   const isCrossMinus = product.id === "cross-minus";
+  const isBd = product.id === "bd-optimization";
+  const bdScenario =
+    isBd && scenario && BD_SCENARIOS.some((s) => s.id === scenario)
+      ? scenario
+      : isBd
+        ? "cannib"
+        : undefined;
+  const bdMismatch = isBd && state === "blocked" && search.mismatch === 1;
+  const hasStats = isBd && search.stats === 1;
+  const isMultiSheet = isBd && search.multisheet === 1;
   const group = semanticsScenarioGroupOf(scenario);
   const isCluster = scenario === "cluster";
   const isFileScenario = isSemantics && (isCluster || scenario === "expand");
   const idx = steps.indexOf("check");
   const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : undefined;
   const canRun = state !== "blocked";
-  const navSearch: Record<string, unknown> = scenario ? { scenario } : {};
+  const navSearch: Record<string, unknown> = {};
+  if (scenario) navSearch.scenario = scenario;
+  if (isBd && hasStats) navSearch.stats = 1;
+  if (isBd && isMultiSheet) navSearch.multisheet = 1;
 
   // Semantics-specific copy
   const semWarning =
@@ -1646,6 +1908,16 @@ function CheckStep({
     "В 312 строках нет показов — они будут пропущены. Найдено 47 повторов ключевых фраз — объединим при подсчёте.";
   const crossBlocked =
     "Не найдена обязательная колонка «Показы». Без неё посчитать пересечения невозможно.";
+  // BD Optimization-specific copy
+  const bdWarning =
+    bdScenario === "losses"
+      ? "В 184 строках нет конверсий — они не повлияют на расчёт потерь. Найдены 26 дублей запросов — объединим."
+      : "В 412 строках нет расхода — они будут пропущены. Часть запросов короче 2 слов — биграммы и триграммы по ним не построим.";
+  const bdBlocked = bdMismatch
+    ? bdScenario === "losses"
+      ? "Структура файла не подходит для сценария «Атрибуцированные потери»: не найдены колонки с потерями и долей потерь."
+      : "Структура файла не подходит для сценария «Каннибализация»: не найдены колонки с пересечениями и метриками каннибализации."
+    : "Не найдена колонка с поисковыми запросами / фразами. Без неё разобрать слова, биграммы и триграммы невозможно.";
   const reportWarning =
     "В выгрузке есть 14 строк с пустой валютой и 3 нераспознанные колонки";
   const reportBlocked = "Не хватает обязательных колонок: campaign_id, date";
@@ -1660,7 +1932,9 @@ function CheckStep({
           : "Тема: «весенняя коллекция спортивной обуви»"
     : isCrossMinus
       ? "keywords_export.xlsx"
-      : "campaign_export.xlsx";
+      : isBd
+        ? "search_queries_export.xlsx"
+        : "campaign_export.xlsx";
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -1674,7 +1948,9 @@ function CheckStep({
                   ? "Источник принят, всё готово к запуску."
                   : isCrossMinus
                     ? "Источник подходит для запуска: найдены кампании, ключевые фразы и показы."
-                    : "Источник принят, структура соответствует ожиданиям. Можно запускать."}
+                    : isBd
+                      ? `Источник подходит для сценария «${bdScenarioName(bdScenario)}». Можно запускать.`
+                      : "Источник принят, структура соответствует ожиданиям. Можно запускать."}
               </div>
             )}
             {state === "warning" && (
@@ -1682,7 +1958,7 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
                 <div>
                   <p className="font-medium text-warning-foreground">
-                    {isSemantics ? semWarning : isCrossMinus ? crossWarning : reportWarning}
+                    {isSemantics ? semWarning : isCrossMinus ? crossWarning : isBd ? bdWarning : reportWarning}
                   </p>
                   <p className="mt-0.5 text-xs text-warning-foreground/80">
                     Можно продолжить — такие строки и колонки будут пропущены при обработке.
@@ -1695,16 +1971,39 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-medium">
-                    {isSemantics ? semBlocked : isCrossMinus ? crossBlocked : reportBlocked}
+                    {isSemantics ? semBlocked : isCrossMinus ? crossBlocked : isBd ? bdBlocked : reportBlocked}
                   </p>
                   <p className="mt-0.5 text-xs">
                     {isSemantics
                       ? "Запуск невозможен. Исправьте источник или параметры."
                       : isCrossMinus
                         ? "Запуск невозможен. Замените файл — нужна выгрузка «Ключевые фразы» с показами по кампаниям."
-                        : "Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими колонками."}
+                        : isBd
+                          ? bdMismatch
+                            ? "Запуск невозможен. Смените сценарий на подходящий или замените файл."
+                            : "Запуск невозможен. Замените файл — нужна выгрузка с поисковыми запросами и расходом."
+                          : "Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими колонками."}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {isBd && bdScenario && (
+              <div className="rounded-md border bg-surface px-3 py-2 text-xs">
+                <span className="text-muted-foreground">Сценарий: </span>
+                <span className="font-medium text-foreground">
+                  {bdScenarioName(bdScenario)}
+                </span>
+                {hasStats && (
+                  <span className="ml-1.5 text-muted-foreground">
+                    · подключён файл со статистикой запросов
+                  </span>
+                )}
+                {isMultiSheet && (
+                  <span className="ml-1.5 text-muted-foreground">
+                    · multi-sheet файл
+                  </span>
+                )}
               </div>
             )}
 
@@ -1777,6 +2076,33 @@ function CheckStep({
                           : "достаточно для расчёта"}
                     </dd>
                   </>
+                ) : isBd ? (
+                  <>
+                    <dt className="text-muted-foreground">Формат</dt>
+                    <dd className="text-foreground">XLSX · 6,4 МБ</dd>
+                    <dt className="text-muted-foreground">Строк</dt>
+                    <dd className="text-foreground">12 480</dd>
+                    <dt className="text-muted-foreground">Колонка с запросами</dt>
+                    <dd className="text-foreground">
+                      {bdMismatch ? "найдена" : "найдена"}
+                    </dd>
+                    <dt className="text-muted-foreground">Расход / клики</dt>
+                    <dd className="text-foreground">найдены</dd>
+                    <dt className="text-muted-foreground">Конверсии</dt>
+                    <dd className="text-foreground">
+                      {hasStats ? "из stats-файла" : "найдены частично"}
+                    </dd>
+                    <dt className="text-muted-foreground">Сценарные колонки</dt>
+                    <dd className="text-foreground">
+                      {bdMismatch
+                        ? "не найдены — сценарий не совпадает"
+                        : state === "warning"
+                          ? "найдены, часть строк без значений"
+                          : "найдены"}
+                    </dd>
+                    <dt className="text-muted-foreground">Куда сохранится</dt>
+                    <dd className="text-foreground">в Библиотеке проекта</dd>
+                  </>
                 ) : (
                   <>
                     <dt className="text-muted-foreground">Строк</dt>
@@ -1802,7 +2128,7 @@ function CheckStep({
                 <li>· Куда сохранится: Библиотека</li>
                 <li>
                   · Ожидаемое время обработки:{" "}
-                  {isSemantics ? "~3–5 мин" : isCrossMinus ? "~1–3 мин" : "~2 мин"}
+                  {isSemantics ? "~3–5 мин" : isCrossMinus ? "~1–3 мин" : isBd ? "~1–3 мин" : "~2 мин"}
                 </li>
               </ul>
             </div>
@@ -1814,11 +2140,22 @@ function CheckStep({
                   params={{ productId: product.id, step: "source" }}
                   search={navSearch}
                 >
-                  {state === "blocked" && (isFileScenario || isCrossMinus)
+                  {state === "blocked" && (isFileScenario || isCrossMinus || (isBd && !bdMismatch))
                     ? "Заменить файл"
                     : "Изменить источник"}
                 </Link>
               </Button>
+              {isBd && bdMismatch && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link
+                    to="/v4/run/$productId/$step"
+                    params={{ productId: product.id, step: "params" }}
+                    search={navSearch}
+                  >
+                    Изменить сценарий
+                  </Link>
+                </Button>
+              )}
               {product.steps.includes("params") && (
                 <Button variant="ghost" size="sm" asChild>
                   <Link
@@ -1888,19 +2225,28 @@ function RunStep({
   const isSemantics = product.id === "semantics-generator";
   const isCampaignAnalysis = product.id === "campaign-analysis";
   const isCrossMinus = product.id === "cross-minus";
+  const isBd = product.id === "bd-optimization";
+  const bdScenario =
+    isBd && search.scenario && BD_SCENARIOS.some((s) => s.id === search.scenario)
+      ? search.scenario
+      : "cannib";
   const navSearch: Record<string, unknown> = search.scenario ? { scenario: search.scenario } : {};
   const headline = isCampaignAnalysis
     ? "Анализ выполняется"
     : isCrossMinus
       ? "Считаем кросс-минусовку"
-      : `${product.name} — идёт обработка`;
+      : isBd
+        ? `BD Optimization · ${bdScenarioName(bdScenario)}`
+        : `${product.name} — идёт обработка`;
   const eta = isSemantics
     ? "Подготовка Excel-файла · ~3–5 мин"
     : isCampaignAnalysis
       ? "Подготовка аналитического отчёта · ~2–3 мин"
       : isCrossMinus
         ? "Подготовка Excel-файла · ~1–3 мин"
-        : "Подготовка результата · ~2 мин";
+        : isBd
+          ? "Подготовка Excel-файла · ~1–3 мин"
+          : "Подготовка результата · ~2 мин";
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
@@ -1937,6 +2283,16 @@ function RunStep({
                 <li className="text-foreground">· Считаем пересечения между кампаниями…</li>
                 <li>· Формируем списки минус-фраз</li>
                 <li>· Сохраняем Excel в Библиотеке</li>
+              </>
+            ) : isBd ? (
+              <>
+                <li>· Читаем источник</li>
+                <li>· Нормализуем поисковые запросы</li>
+                <li className="text-foreground">· Разбираем слова, биграммы и триграммы…</li>
+                <li>
+                  · Считаем метрики {bdScenario === "losses" ? "атрибуцированных потерь" : "каннибализации"}
+                </li>
+                <li>· Формируем Excel и сохраняем в Библиотеке</li>
               </>
             ) : (
               <>
