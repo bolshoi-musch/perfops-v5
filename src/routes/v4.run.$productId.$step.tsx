@@ -1621,9 +1621,36 @@ function CheckStep({
 }) {
   const search = Route.useSearch() as RunnerSearch;
   const state: CheckState = search.state ?? "clean";
+  const scenario = search.scenario;
+  const isSemantics = product.id === "semantics-generator";
+  const group = semanticsScenarioGroupOf(scenario);
+  const isCluster = scenario === "cluster";
+  const isFileScenario = isSemantics && (isCluster || scenario === "expand");
   const idx = steps.indexOf("check");
   const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : undefined;
   const canRun = state !== "blocked";
+  const navSearch: Record<string, unknown> = scenario ? { scenario } : {};
+
+  // Semantics-specific copy
+  const semWarning =
+    "Файл прочитан, но в 124 строках обнаружены пустые значения и 38 повторов фраз — будут пропущены при обработке.";
+  const semBlocked = isCluster
+    ? "Не удалось определить столбец с фразами. Укажите его в параметрах или замените файл."
+    : "Файл не содержит ни одной валидной фразы. Замените источник.";
+  const reportWarning =
+    "В выгрузке есть 14 строк с пустой валютой и 3 нераспознанные колонки";
+  const reportBlocked = "Не хватает обязательных колонок: campaign_id, date";
+
+  const sourceLabel = isSemantics
+    ? isCluster
+      ? "phrases_to_cluster.csv"
+      : scenario === "expand"
+        ? "seed_keywords.txt"
+        : scenario === "topic-list"
+          ? "Тема списка: «спортивная обувь»"
+          : "Тема: «весенняя коллекция спортивной обуви»"
+    : "campaign_export.xlsx";
+
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
@@ -1632,7 +1659,9 @@ function CheckStep({
             {state === "clean" && (
               <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
                 <CheckCircle2 className="h-4 w-4" />
-                Источник принят, структура соответствует ожиданиям. Можно запускать.
+                {isSemantics
+                  ? "Источник принят, всё готово к запуску."
+                  : "Источник принят, структура соответствует ожиданиям. Можно запускать."}
               </div>
             )}
             {state === "warning" && (
@@ -1640,10 +1669,10 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
                 <div>
                   <p className="font-medium text-warning-foreground">
-                    В выгрузке есть 14 строк с пустой валютой и 3 нераспознанные колонки
+                    {isSemantics ? semWarning : reportWarning}
                   </p>
                   <p className="mt-0.5 text-xs text-warning-foreground/80">
-                    Можно продолжить — такие строки и колонки будут пропущены при анализе.
+                    Можно продолжить — такие строки и колонки будут пропущены при обработке.
                   </p>
                 </div>
               </div>
@@ -1653,13 +1682,28 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-medium">
-                    Не хватает обязательных колонок: campaign_id, date
+                    {isSemantics ? semBlocked : reportBlocked}
                   </p>
                   <p className="mt-0.5 text-xs">
-                    Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими
-                    колонками.
+                    {isSemantics
+                      ? "Запуск невозможен. Исправьте источник или параметры."
+                      : "Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими колонками."}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {isSemantics && scenario && (
+              <div className="rounded-md border bg-surface px-3 py-2 text-xs">
+                <span className="text-muted-foreground">Сценарий: </span>
+                <span className="font-medium text-foreground">
+                  {semanticsScenarioName(scenario)}
+                </span>
+                {group && (
+                  <span className="ml-1.5 text-muted-foreground">
+                    · {semanticsScenarioGroupLabel[group]}
+                  </span>
+                )}
               </div>
             )}
 
@@ -1667,16 +1711,40 @@ function CheckStep({
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Источник
               </p>
-              <p className="mt-1 text-sm font-medium text-foreground">campaign_export.xlsx</p>
+              <p className="mt-1 text-sm font-medium text-foreground">{sourceLabel}</p>
               <dl className="mt-2 grid grid-cols-2 gap-y-1 text-xs">
-                <dt className="text-muted-foreground">Строк</dt>
-                <dd className="text-foreground">2 184</dd>
-                <dt className="text-muted-foreground">Колонок</dt>
-                <dd className="text-foreground">17</dd>
-                <dt className="text-muted-foreground">Период</dt>
-                <dd className="text-foreground">01.04.2026 — 24.04.2026</dd>
-                <dt className="text-muted-foreground">Кампаний</dt>
-                <dd className="text-foreground">18</dd>
+                {isSemantics ? (
+                  isFileScenario ? (
+                    <>
+                      <dt className="text-muted-foreground">Строк</dt>
+                      <dd className="text-foreground">4 320</dd>
+                      <dt className="text-muted-foreground">Колонок</dt>
+                      <dd className="text-foreground">{isCluster ? "1 (phrase)" : "1"}</dd>
+                      <dt className="text-muted-foreground">Уникальных фраз</dt>
+                      <dd className="text-foreground">4 282</dd>
+                      <dt className="text-muted-foreground">Размер</dt>
+                      <dd className="text-foreground">18 КБ</dd>
+                    </>
+                  ) : (
+                    <>
+                      <dt className="text-muted-foreground">Тип входа</dt>
+                      <dd className="text-foreground">Тема / список</dd>
+                      <dt className="text-muted-foreground">Сценарий</dt>
+                      <dd className="text-foreground">{semanticsScenarioName(scenario)}</dd>
+                    </>
+                  )
+                ) : (
+                  <>
+                    <dt className="text-muted-foreground">Строк</dt>
+                    <dd className="text-foreground">2 184</dd>
+                    <dt className="text-muted-foreground">Колонок</dt>
+                    <dd className="text-foreground">17</dd>
+                    <dt className="text-muted-foreground">Период</dt>
+                    <dd className="text-foreground">01.04.2026 — 24.04.2026</dd>
+                    <dt className="text-muted-foreground">Кампаний</dt>
+                    <dd className="text-foreground">18</dd>
+                  </>
+                )}
               </dl>
             </div>
 
@@ -1688,7 +1756,9 @@ function CheckStep({
                 <li>· Продукт: {product.name}</li>
                 <li>· Формат результата: {resultFormatLabel[product.resultFormat]}</li>
                 <li>· Куда сохранится: Библиотека</li>
-                <li>· Ожидаемое время обработки: ~2 мин</li>
+                <li>
+                  · Ожидаемое время обработки: {isSemantics ? "~3–5 мин" : "~2 мин"}
+                </li>
               </ul>
             </div>
 
@@ -1697,8 +1767,11 @@ function CheckStep({
                 <Link
                   to="/v4/run/$productId/$step"
                   params={{ productId: product.id, step: "source" }}
+                  search={navSearch}
                 >
-                  Изменить источник
+                  {state === "blocked" && isFileScenario
+                    ? "Заменить файл"
+                    : "Изменить источник"}
                 </Link>
               </Button>
               {product.steps.includes("params") && (
@@ -1706,8 +1779,9 @@ function CheckStep({
                   <Link
                     to="/v4/run/$productId/$step"
                     params={{ productId: product.id, step: "params" }}
+                    search={navSearch}
                   >
-                    Вернуться к параметрам
+                    Изменить параметры
                   </Link>
                 </Button>
               )}
@@ -1729,6 +1803,7 @@ function CheckStep({
           steps={steps}
           current="check"
           projectId={projectId}
+          search={navSearch}
           nextSlot={
             next &&
             (canRun ? (
@@ -1736,6 +1811,7 @@ function CheckStep({
                 <Link
                   to="/v4/run/$productId/$step"
                   params={{ productId: product.id, step: next }}
+                  search={navSearch}
                 >
                   Запустить <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
