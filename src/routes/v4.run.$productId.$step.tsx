@@ -124,6 +124,7 @@ const semanticsScenarioGroupOf = (id?: string) =>
 const PROCESS_TITLES: Record<string, string> = {
   "dashboard-builder": "Подготовка дашборда",
   "campaign-analysis": "Анализ рекламных кампаний",
+  "semantics-generator": "Сбор и обработка семантики",
 };
 
 export const Route = createFileRoute("/v4/run/$productId/$step")({
