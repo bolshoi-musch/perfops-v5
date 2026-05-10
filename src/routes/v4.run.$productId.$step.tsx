@@ -2076,6 +2076,33 @@ function CheckStep({
                           : "достаточно для расчёта"}
                     </dd>
                   </>
+                ) : isBd ? (
+                  <>
+                    <dt className="text-muted-foreground">Формат</dt>
+                    <dd className="text-foreground">XLSX · 6,4 МБ</dd>
+                    <dt className="text-muted-foreground">Строк</dt>
+                    <dd className="text-foreground">12 480</dd>
+                    <dt className="text-muted-foreground">Колонка с запросами</dt>
+                    <dd className="text-foreground">
+                      {bdMismatch ? "найдена" : "найдена"}
+                    </dd>
+                    <dt className="text-muted-foreground">Расход / клики</dt>
+                    <dd className="text-foreground">найдены</dd>
+                    <dt className="text-muted-foreground">Конверсии</dt>
+                    <dd className="text-foreground">
+                      {hasStats ? "из stats-файла" : "найдены частично"}
+                    </dd>
+                    <dt className="text-muted-foreground">Сценарные колонки</dt>
+                    <dd className="text-foreground">
+                      {bdMismatch
+                        ? "не найдены — сценарий не совпадает"
+                        : state === "warning"
+                          ? "найдены, часть строк без значений"
+                          : "найдены"}
+                    </dd>
+                    <dt className="text-muted-foreground">Куда сохранится</dt>
+                    <dd className="text-foreground">в Библиотеке проекта</dd>
+                  </>
                 ) : (
                   <>
                     <dt className="text-muted-foreground">Строк</dt>
