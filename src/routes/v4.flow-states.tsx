@@ -259,6 +259,144 @@ const states: StateDef[] = [
   },
 ];
 
+// --------------------- Example: Конструктор дашбордов ---------------------
+// Не отдельный набор состояний, а примеры, как общие тональности
+// применяются в продукте «Конструктор дашбордов» (процесс «Подготовка
+// дашборда»). Используем те же компоненты, что и общие состояния.
+
+interface DashbotExample {
+  group: string;
+  tone: Tone;
+  title: string;
+  example: ReactNode;
+}
+
+const dashbotExamples: DashbotExample[] = [
+  {
+    group: "Источник не выбран",
+    tone: "neutral",
+    title: "Первый источник пуст",
+    example: (
+      <div className="rounded-md border border-dashed bg-surface px-4 py-6 text-center">
+        <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
+        <p className="mt-2 text-sm font-medium text-foreground">
+          Добавьте первый источник
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Файл, подключённый аккаунт или источник из Библиотеки.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Источник выбран",
+    tone: "info",
+    title: "Второй источник равноправен",
+    example: (
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2 rounded-md border bg-info-soft px-3 py-2 text-xs text-info">
+          <FileSpreadsheet className="h-3.5 w-3.5" /> Источник 1 — campaign_export.xlsx
+        </div>
+        <div className="flex items-center gap-2 rounded-md border bg-info-soft px-3 py-2 text-xs text-info">
+          <FileSpreadsheet className="h-3.5 w-3.5" /> Источник 2 — Яндекс Директ · Основной кабинет
+        </div>
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (clean)",
+    tone: "success",
+    title: "Проверка пройдена",
+    example: (
+      <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
+        <CheckCircle2 className="h-4 w-4" />
+        План объединения подтверждён, всё готово к запуску.
+      </div>
+    ),
+  },
+  {
+    group: "Предупреждение",
+    tone: "warning",
+    title: "Совпадение по второму источнику 87%",
+    example: (
+      <div className="rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-warning-foreground">
+          <AlertTriangle className="h-4 w-4" /> 142 строки только в источнике 1
+        </p>
+        <p className="mt-1 text-xs text-warning-foreground/80">
+          Можно продолжить — они будут включены как есть.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Блокировка",
+    tone: "blocked",
+    title: "Не найдены ключи объединения",
+    example: (
+      <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-destructive">
+          <CircleSlash className="h-4 w-4" /> Не удалось сопоставить источники по ключам
+        </p>
+        <Button size="sm" variant="outline" className="mt-2">
+          Настроить объединение
+        </Button>
+      </div>
+    ),
+  },
+  {
+    group: "Идёт обработка",
+    tone: "processing",
+    title: "Сборка дашборда",
+    example: (
+      <div className="flex items-center gap-3 rounded-md border bg-accent px-3 py-2 text-sm">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <span className="text-foreground">Подготовка дашборда…</span>
+      </div>
+    ),
+  },
+  {
+    group: "Результат готов",
+    tone: "success",
+    title: "Дашборд готов",
+    example: (
+      <div className="rounded-md border border-success/30 bg-success-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-success">
+          <CheckCircle2 className="h-4 w-4" /> Дашборд готов и сохранён в Библиотеке
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button size="sm">
+            <ExternalLink className="h-3 w-3" /> Открыть дашборд
+          </Button>
+          <Button size="sm" variant="outline">
+            Открыть Библиотеку
+          </Button>
+        </div>
+      </div>
+    ),
+  },
+  {
+    group: "Результат готов, но не сохранён в Библиотеке",
+    tone: "warning",
+    title: "Дашборд собран, регистрация в Библиотеке не удалась",
+    example: (
+      <div className="rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-warning-foreground">
+          <Info className="h-4 w-4" /> Дашборд готов, но запись в Библиотеке не создана.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button size="sm">
+            <RotateCcw className="h-3 w-3" /> Повторить сохранение
+          </Button>
+          <Button size="sm" variant="outline">
+            <ExternalLink className="h-3 w-3" /> Открыть дашборд
+          </Button>
+        </div>
+      </div>
+    ),
+  },
+];
+
 function FlowStatesPage() {
   return (
     <AppShellV4>
@@ -300,6 +438,49 @@ function FlowStatesPage() {
           );
         })}
       </div>
+
+      {/* Subsection: how the same tones look inside «Конструктор дашбордов».
+          Это примеры внутри общего справочника, а не параллельная система. */}
+      <section className="mt-10 border-t pt-6">
+        <h2 className="text-base font-semibold text-foreground">
+          Пример: Конструктор дашбордов
+        </h2>
+        <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+          Те же общие тональности, но применённые к процессу «Подготовка
+          дашборда». Сами тоны и компоненты не меняются.
+        </p>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {dashbotExamples.map((s, i) => {
+            const tone = toneStyles[s.tone];
+            return (
+              <Card key={i} className="border bg-card shadow-none">
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {s.group}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
+                        {s.title}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-mono lowercase",
+                        tone.chip,
+                      )}
+                    >
+                      {tone.label}
+                    </span>
+                  </div>
+                  <div className="rounded-md border-t pt-3">{s.example}</div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
     </AppShellV4>
   );
 }
