@@ -1801,7 +1801,8 @@ function CheckStep({
                 <li>· Формат результата: {resultFormatLabel[product.resultFormat]}</li>
                 <li>· Куда сохранится: Библиотека</li>
                 <li>
-                  · Ожидаемое время обработки: {isSemantics ? "~3–5 мин" : "~2 мин"}
+                  · Ожидаемое время обработки:{" "}
+                  {isSemantics ? "~3–5 мин" : isCrossMinus ? "~1–3 мин" : "~2 мин"}
                 </li>
               </ul>
             </div>
