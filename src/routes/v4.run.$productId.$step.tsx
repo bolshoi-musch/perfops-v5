@@ -69,23 +69,57 @@ const stepSchema = z.enum([
 ]);
 
 // Search params for the runner.
-//   second   — second source active (dashboard-builder dynamic "Combining" step)
-//   clarify  — show inline "unrecognized metrics" block on the metrics step
-//   state    — drives the diagnostic state of the check step
+//   second    — second source active (dashboard-builder dynamic "Combining" step)
+//   clarify   — show inline "unrecognized metrics" block on the metrics step
+//   state     — drives the diagnostic state of the check step
 //   dashboard — adds optional "Open dashboard" CTA on analytics-report result
+//   scenario  — selected semantics scenario id (drives source/params)
+//   saved     — 1 (default) — result saved to Library; 0 — local copy only
+//   save      — "error" — saving result to Library failed
 type CheckState = "clean" | "warning" | "blocked";
+type SaveState = "ok" | "error";
 type RunnerSearch = {
   second?: number;
   clarify?: number;
   state?: CheckState;
   dashboard?: number;
+  scenario?: string;
+  saved?: number;
+  save?: SaveState;
 };
 const searchSchema = z.object({
   second: z.coerce.number().optional(),
   clarify: z.coerce.number().optional(),
   state: z.enum(["clean", "warning", "blocked"]).optional(),
   dashboard: z.coerce.number().optional(),
+  scenario: z.string().optional(),
+  saved: z.coerce.number().optional(),
+  save: z.enum(["ok", "error"]).optional(),
 });
+
+// ---- Semantics scenarios: per-scenario source/params config ----
+const SEMANTICS_SOURCE_BY_SCENARIO: Record<string, SourceKind[]> = {
+  conservative: ["topic", "url", "upload", "library"],
+  balanced: ["topic", "url", "upload", "library"],
+  broad: ["topic", "url", "upload", "library"],
+  "topic-list": ["topic", "upload", "library"],
+  expand: ["topic", "upload", "library"],
+  cluster: ["upload", "library"],
+};
+const semanticsTopicLabel = (scenario?: string) =>
+  scenario === "expand"
+    ? "Исходный список запросов"
+    : scenario === "topic-list"
+      ? "Тема списка"
+      : "Тема или направление";
+const semanticsTopicPlaceholder = (scenario?: string) =>
+  scenario === "expand"
+    ? "Например: александр пушкин\nстихи пушкина\nпоэт пушкин"
+    : "Например: запуск весенней коллекции спортивной обуви";
+const semanticsScenarioName = (id?: string) =>
+  semanticsScenarios.find((s) => s.id === id)?.name ?? "Не выбран";
+const semanticsScenarioGroupOf = (id?: string) =>
+  semanticsScenarios.find((s) => s.id === id)?.group;
 
 const PROCESS_TITLES: Record<string, string> = {
   "dashboard-builder": "Подготовка дашборда",
