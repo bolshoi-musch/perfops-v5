@@ -1672,7 +1672,9 @@ function CheckStep({
                 <CheckCircle2 className="h-4 w-4" />
                 {isSemantics
                   ? "Источник принят, всё готово к запуску."
-                  : "Источник принят, структура соответствует ожиданиям. Можно запускать."}
+                  : isCrossMinus
+                    ? "Источник подходит для запуска: найдены кампании, ключевые фразы и показы."
+                    : "Источник принят, структура соответствует ожиданиям. Можно запускать."}
               </div>
             )}
             {state === "warning" && (
@@ -1680,7 +1682,7 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
                 <div>
                   <p className="font-medium text-warning-foreground">
-                    {isSemantics ? semWarning : reportWarning}
+                    {isSemantics ? semWarning : isCrossMinus ? crossWarning : reportWarning}
                   </p>
                   <p className="mt-0.5 text-xs text-warning-foreground/80">
                     Можно продолжить — такие строки и колонки будут пропущены при обработке.
@@ -1693,12 +1695,14 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-medium">
-                    {isSemantics ? semBlocked : reportBlocked}
+                    {isSemantics ? semBlocked : isCrossMinus ? crossBlocked : reportBlocked}
                   </p>
                   <p className="mt-0.5 text-xs">
                     {isSemantics
                       ? "Запуск невозможен. Исправьте источник или параметры."
-                      : "Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими колонками."}
+                      : isCrossMinus
+                        ? "Запуск невозможен. Замените файл — нужна выгрузка «Ключевые фразы» с показами по кампаниям."
+                        : "Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими колонками."}
                   </p>
                 </div>
               </div>
