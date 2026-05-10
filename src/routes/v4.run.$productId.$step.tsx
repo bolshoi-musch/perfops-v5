@@ -597,7 +597,7 @@ function SourceStep({
           steps={steps}
           current="source"
           projectId={projectId}
-          search={hasSecondSource ? { second: 1 } : {}}
+          search={navSearch}
         />
       </div>
     </div>
