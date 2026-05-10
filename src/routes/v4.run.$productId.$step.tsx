@@ -658,7 +658,11 @@ function SourcePanel({
     const accepted = isCluster
       ? ".txt, .csv, .xlsx"
       : product.acceptedFileTypes.join(", ");
-    const sizeHint = isSemantics ? "до 10 МБ" : "до 25 МБ";
+    const sizeHint = isSemantics
+      ? "до 10 МБ"
+      : product.id === "cross-minus"
+        ? "до 50 МБ"
+        : "до 25 МБ";
     return (
       <div className="rounded-md border border-dashed bg-surface px-4 py-8 text-center">
         <Upload className="mx-auto h-7 w-7 text-muted-foreground" />
