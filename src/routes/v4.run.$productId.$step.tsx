@@ -314,12 +314,22 @@ function ScenarioStep({
   projectId: string;
   steps: StepId[];
 }) {
-  const [scenario, setScenario] = useState<string>("balanced");
+  const search = Route.useSearch() as RunnerSearch;
+  const navigate = useNavigate();
+  const scenario = search.scenario;
   const groups: SemanticsScenarioGroup[] = ["collection", "research", "processing"];
+  const setScenario = (id: string) => {
+    navigate({
+      to: "/v4/run/$productId/$step",
+      params: { productId: product.id, step: "scenario" },
+      search: { scenario: id },
+      replace: true,
+    });
+  };
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
-        <CardContent className="space-y-4 p-5">
+        <CardContent className="space-y-5 p-5">
           {groups.map((g) => (
             <div key={g}>
               <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
@@ -350,6 +360,12 @@ function ScenarioStep({
               </div>
             </div>
           ))}
+          {!scenario && (
+            <p className="rounded-md border border-dashed bg-surface px-3 py-2 text-xs text-muted-foreground">
+              Выберите сценарий, чтобы продолжить. Дальнейшие шаги — источник и параметры —
+              зависят от сценария.
+            </p>
+          )}
         </CardContent>
       </Card>
       <HelpCard
@@ -366,6 +382,8 @@ function ScenarioStep({
           steps={steps}
           current="scenario"
           projectId={projectId}
+          search={scenario ? { scenario } : {}}
+          nextDisabled={!scenario}
         />
       </div>
     </div>
