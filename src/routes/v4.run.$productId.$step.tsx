@@ -177,7 +177,9 @@ function FlowRunnerPage() {
   }
 
   const project = projects.find((p) => p.productId === productId) ?? projects[0];
-  const navSearch = hasSecondSource ? { second: 1 } : {};
+  const navSearch: Record<string, unknown> = {};
+  if (hasSecondSource) navSearch.second = 1;
+  if (search.scenario) navSearch.scenario = search.scenario;
 
   return (
     <AppShellV4>
