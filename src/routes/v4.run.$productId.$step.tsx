@@ -1887,15 +1887,20 @@ function RunStep({
   const search = Route.useSearch() as RunnerSearch;
   const isSemantics = product.id === "semantics-generator";
   const isCampaignAnalysis = product.id === "campaign-analysis";
+  const isCrossMinus = product.id === "cross-minus";
   const navSearch: Record<string, unknown> = search.scenario ? { scenario: search.scenario } : {};
   const headline = isCampaignAnalysis
     ? "Анализ выполняется"
-    : `${product.name} — идёт обработка`;
+    : isCrossMinus
+      ? "Считаем кросс-минусовку"
+      : `${product.name} — идёт обработка`;
   const eta = isSemantics
     ? "Подготовка Excel-файла · ~3–5 мин"
     : isCampaignAnalysis
       ? "Подготовка аналитического отчёта · ~2–3 мин"
-      : "Подготовка результата · ~2 мин";
+      : isCrossMinus
+        ? "Подготовка Excel-файла · ~1–3 мин"
+        : "Подготовка результата · ~2 мин";
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
@@ -1924,6 +1929,14 @@ function RunStep({
                 <li className="text-foreground">· Готовим выводы и инсайты…</li>
                 <li>· Формируем аналитический отчёт</li>
                 <li>· Сохраняем в Библиотеке</li>
+              </>
+            ) : isCrossMinus ? (
+              <>
+                <li>· Читаем источник</li>
+                <li>· Проверяем структуру и колонки</li>
+                <li className="text-foreground">· Считаем пересечения между кампаниями…</li>
+                <li>· Формируем списки минус-фраз</li>
+                <li>· Сохраняем Excel в Библиотеке</li>
               </>
             ) : (
               <>
