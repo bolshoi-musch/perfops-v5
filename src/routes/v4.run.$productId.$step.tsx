@@ -1150,6 +1150,8 @@ function ParamRow({
 
 // --------------------- Metrics & focus (campaign-analysis) ---------------------
 
+type ClarifyChoice = "volume" | "rate" | "skip";
+
 function MetricsStep({
   product,
   projectId,
@@ -1159,6 +1161,9 @@ function MetricsStep({
   projectId: string;
   steps: StepId[];
 }) {
+  const search = Route.useSearch() as RunnerSearch;
+  const showClarify = search.clarify === 1;
+
   const [selected, setSelected] = useState<Set<string>>(new Set(["cpa", "clicks"]));
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -1171,72 +1176,150 @@ function MetricsStep({
   const hasAbsolute = [...selected].some(
     (id) => metricsCatalog.find((m) => m.id === id)?.group === "absolute",
   );
+  const noAbsoluteError = selected.size > 0 && !hasAbsolute;
+
+  // Demo: fixed list of unrecognized columns (only when ?clarify=1).
+  const unrecognized = [
+    { column: "engagement_score", guess: "rate" as ClarifyChoice },
+    { column: "post_saves", guess: "volume" as ClarifyChoice },
+    { column: "lead_value_uah", guess: "volume" as ClarifyChoice },
+  ];
+  const [choices, setChoices] = useState<Record<string, ClarifyChoice>>(() =>
+    Object.fromEntries(unrecognized.map((u) => [u.column, u.guess])),
+  );
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
-      <Card className="border bg-card shadow-none lg:col-span-2">
-        <CardContent className="space-y-5 p-5">
-          <div>
-            <p className="text-sm font-medium text-foreground">Ключевые метрики</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Выберите 1–2 ключевые метрики, которые важны для вашего анализа.
-            </p>
-            <div className="mt-3 space-y-3">
-              {groups.map((g) => (
-                <div key={g}>
-                  <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                    {metricGroupLabel[g]}
+      <div className="space-y-3 lg:col-span-2">
+        {showClarify && (
+          <Card className="border border-warning/40 bg-card shadow-none">
+            <CardContent className="space-y-3 p-5">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground">
+                    Некоторые метрики не распознаны
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {metricsCatalog
-                      .filter((m) => m.group === g)
-                      .map((m) => {
-                        const active = selected.has(m.id);
-                        return (
-                          <button
-                            key={m.id}
-                            type="button"
-                            onClick={() => toggle(m.id)}
-                            className={cn(
-                              "rounded-md border px-2.5 py-1 text-xs transition-colors",
-                              active
-                                ? "border-primary bg-accent text-accent-foreground"
-                                : "border-border bg-card text-muted-foreground hover:text-foreground",
-                            )}
-                          >
-                            {m.name}
-                          </button>
-                        );
-                      })}
-                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Укажите тип, чтобы они учитывались правильно. Можно пропустить — тогда
+                    колонка не попадёт в анализ.
+                  </p>
                 </div>
-              ))}
-            </div>
-            {!hasAbsolute && selected.size > 0 && (
-              <p className="mt-2 text-[11px] text-warning-foreground">
-                Хотя бы одна выбранная метрика должна быть из абсолютных.
-              </p>
-            )}
-          </div>
+              </div>
+              <ul className="divide-y rounded-md border bg-surface">
+                {unrecognized.map((u) => (
+                  <li
+                    key={u.column}
+                    className="grid grid-cols-1 items-center gap-2 px-3 py-2.5 sm:grid-cols-[1fr_auto_auto]"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {u.column}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Предполагаемый тип:{" "}
+                        {u.guess === "volume"
+                          ? "Абсолютная"
+                          : u.guess === "rate"
+                            ? "Относительная"
+                            : "Пропустить"}
+                      </p>
+                    </div>
+                    <select
+                      value={choices[u.column]}
+                      onChange={(e) =>
+                        setChoices((prev) => ({
+                          ...prev,
+                          [u.column]: e.target.value as ClarifyChoice,
+                        }))
+                      }
+                      className="h-8 rounded-md border bg-card px-2 text-xs text-foreground"
+                      aria-label={`Тип метрики ${u.column}`}
+                    >
+                      <option value="volume">Абсолютная</option>
+                      <option value="rate">Относительная</option>
+                      <option value="skip">Пропустить</option>
+                    </select>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
-          <div>
-            <Label htmlFor="focus" className="text-xs font-medium">
-              Фокус анализа <span className="text-muted-foreground">(опционально)</span>
-            </Label>
-            <Textarea
-              id="focus"
-              placeholder="Например: сделайте акцент на CPA, проблемных кампаниях и точках роста"
-              className="mt-1 min-h-[72px] text-sm"
-            />
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="border bg-card shadow-none">
+          <CardContent className="space-y-5 p-5">
+            <div>
+              <p className="text-sm font-medium text-foreground">Ключевые метрики</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Выберите 1–2 ключевые метрики, которые важны для вашего анализа. Хотя бы одна
+                должна быть абсолютной.
+              </p>
+              <div className="mt-3 space-y-3">
+                {groups.map((g) => (
+                  <div key={g}>
+                    <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      {metricGroupLabel[g]}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {metricsCatalog
+                        .filter((m) => m.group === g)
+                        .map((m) => {
+                          const active = selected.has(m.id);
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => toggle(m.id)}
+                              className={cn(
+                                "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                                active
+                                  ? "border-primary bg-accent text-accent-foreground"
+                                  : "border-border bg-card text-muted-foreground hover:text-foreground",
+                              )}
+                            >
+                              {m.name}
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {noAbsoluteError && (
+                <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/30 bg-blocked-soft px-3 py-2 text-xs text-destructive">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Среди выбранных метрик должна быть хотя бы одна абсолютная (например, клики
+                    или конверсии).
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="focus" className="text-xs font-medium">
+                Фокус анализа <span className="text-muted-foreground">(опционально)</span>
+              </Label>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Не влияет на расчёт метрик. Помогает выделить акценты в тексте отчёта.
+              </p>
+              <Textarea
+                id="focus"
+                placeholder="Например: сделайте акцент на CPA, проблемных кампаниях и точках роста"
+                className="mt-1.5 min-h-[72px] text-sm"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       <HelpCard
         title="Подсказки"
         items={[
           "Не больше 2 ключевых метрик — отчёт будет точнее",
-          "Хотя бы одна метрика — из абсолютных",
-          "Фокус анализа помогает выделить нужный сегмент",
+          "Хотя бы одна метрика — из абсолютных (клики, конверсии, расход)",
+          "Если часть колонок не распознана — укажите их тип выше",
+          "Фокус анализа влияет только на акценты текста",
         ]}
       />
       <div className="lg:col-span-3">
@@ -1263,8 +1346,11 @@ function CheckStep({
   projectId: string;
   steps: StepId[];
 }) {
+  const search = Route.useSearch() as RunnerSearch;
+  const state: CheckState = search.state ?? "clean";
   const idx = steps.indexOf("check");
   const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : undefined;
+  const canRun = state !== "blocked";
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
