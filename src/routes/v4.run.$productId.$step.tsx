@@ -610,21 +610,38 @@ function SourcePanel({
   hasFile,
   onAttachFile,
   onClearFile,
+  scenario,
 }: {
   kind: SourceKind;
   product: Product;
   hasFile: boolean;
   onAttachFile: () => void;
   onClearFile: () => void;
+  scenario?: string;
 }) {
+  const isSemantics = product.id === "semantics-generator";
+  const isCluster = isSemantics && scenario === "cluster";
+
   if (kind === "upload") {
     if (hasFile) {
+      const fileName = isSemantics
+        ? isCluster
+          ? "phrases_to_cluster.csv"
+          : scenario === "expand"
+            ? "seed_keywords.txt"
+            : "topic_brief.txt"
+        : "campaign_export.xlsx";
+      const fileMeta = isSemantics
+        ? isCluster
+          ? "CSV · 18 КБ · 4 320 фраз · принят"
+          : "TXT · 4 КБ · принят"
+        : "412 КБ · принят";
       return (
         <div className="flex items-center justify-between gap-3 rounded-md border bg-success-soft px-3 py-2.5 text-sm">
           <div className="flex min-w-0 items-center gap-2">
             <FileSpreadsheet className="h-4 w-4 shrink-0 text-success" />
-            <span className="truncate font-medium text-foreground">campaign_export.xlsx</span>
-            <span className="text-xs text-muted-foreground">· 412 КБ · принят</span>
+            <span className="truncate font-medium text-foreground">{fileName}</span>
+            <span className="text-xs text-muted-foreground">· {fileMeta}</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Button size="sm" variant="ghost" onClick={onClearFile}>
@@ -637,12 +654,18 @@ function SourcePanel({
         </div>
       );
     }
+    const accepted = isCluster
+      ? ".txt, .csv, .xlsx"
+      : product.acceptedFileTypes.join(", ");
+    const sizeHint = isSemantics ? "до 10 МБ" : "до 25 МБ";
     return (
       <div className="rounded-md border border-dashed bg-surface px-4 py-8 text-center">
         <Upload className="mx-auto h-7 w-7 text-muted-foreground" />
-        <p className="mt-2 text-sm font-medium text-foreground">Перетащите файл сюда</p>
+        <p className="mt-2 text-sm font-medium text-foreground">
+          {isCluster ? "Загрузите файл с фразами" : "Перетащите файл сюда"}
+        </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {product.acceptedFileTypes.join(", ")} · до 25 МБ
+          {accepted} · {sizeHint}
         </p>
         <Button size="sm" variant="outline" className="mt-3" onClick={onAttachFile}>
           Выбрать файл
@@ -663,12 +686,19 @@ function SourcePanel({
     return (
       <div className="space-y-1.5">
         <Label htmlFor="topic" className="text-xs font-medium">
-          Тема или направление
+          {isSemantics ? semanticsTopicLabel(scenario) : "Тема или направление"}
         </Label>
         <Textarea
           id="topic"
-          placeholder="Например: запуск весенней коллекции спортивной обуви"
-          className="min-h-[88px] text-sm"
+          placeholder={
+            isSemantics
+              ? semanticsTopicPlaceholder(scenario)
+              : "Например: запуск весенней коллекции спортивной обуви"
+          }
+          className={cn(
+            "text-sm",
+            isSemantics && scenario === "expand" ? "min-h-[120px]" : "min-h-[88px]",
+          )}
         />
       </div>
     );
