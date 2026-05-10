@@ -125,6 +125,7 @@ const PROCESS_TITLES: Record<string, string> = {
   "dashboard-builder": "Подготовка дашборда",
   "campaign-analysis": "Анализ рекламных кампаний",
   "semantics-generator": "Сбор и обработка семантики",
+  "cross-minus": "Кросс-минусовка",
 };
 
 export const Route = createFileRoute("/v4/run/$productId/$step")({
@@ -657,7 +658,11 @@ function SourcePanel({
     const accepted = isCluster
       ? ".txt, .csv, .xlsx"
       : product.acceptedFileTypes.join(", ");
-    const sizeHint = isSemantics ? "до 10 МБ" : "до 25 МБ";
+    const sizeHint = isSemantics
+      ? "до 10 МБ"
+      : product.id === "cross-minus"
+        ? "до 50 МБ"
+        : "до 25 МБ";
     return (
       <div className="rounded-md border border-dashed bg-surface px-4 py-8 text-center">
         <Upload className="mx-auto h-7 w-7 text-muted-foreground" />
@@ -1621,6 +1626,7 @@ function CheckStep({
   const state: CheckState = search.state ?? "clean";
   const scenario = search.scenario;
   const isSemantics = product.id === "semantics-generator";
+  const isCrossMinus = product.id === "cross-minus";
   const group = semanticsScenarioGroupOf(scenario);
   const isCluster = scenario === "cluster";
   const isFileScenario = isSemantics && (isCluster || scenario === "expand");
@@ -1635,6 +1641,11 @@ function CheckStep({
   const semBlocked = isCluster
     ? "Не удалось определить столбец с фразами. Укажите его в параметрах или замените файл."
     : "Файл не содержит ни одной валидной фразы. Замените источник.";
+  // Cross-minus-specific copy
+  const crossWarning =
+    "В 312 строках нет показов — они будут пропущены. Найдено 47 повторов ключевых фраз — объединим при подсчёте.";
+  const crossBlocked =
+    "Не найдена обязательная колонка «Показы». Без неё посчитать пересечения невозможно.";
   const reportWarning =
     "В выгрузке есть 14 строк с пустой валютой и 3 нераспознанные колонки";
   const reportBlocked = "Не хватает обязательных колонок: campaign_id, date";
@@ -1647,7 +1658,9 @@ function CheckStep({
         : scenario === "topic-list"
           ? "Тема списка: «спортивная обувь»"
           : "Тема: «весенняя коллекция спортивной обуви»"
-    : "campaign_export.xlsx";
+    : isCrossMinus
+      ? "keywords_export.xlsx"
+      : "campaign_export.xlsx";
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -1659,7 +1672,9 @@ function CheckStep({
                 <CheckCircle2 className="h-4 w-4" />
                 {isSemantics
                   ? "Источник принят, всё готово к запуску."
-                  : "Источник принят, структура соответствует ожиданиям. Можно запускать."}
+                  : isCrossMinus
+                    ? "Источник подходит для запуска: найдены кампании, ключевые фразы и показы."
+                    : "Источник принят, структура соответствует ожиданиям. Можно запускать."}
               </div>
             )}
             {state === "warning" && (
@@ -1667,7 +1682,7 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
                 <div>
                   <p className="font-medium text-warning-foreground">
-                    {isSemantics ? semWarning : reportWarning}
+                    {isSemantics ? semWarning : isCrossMinus ? crossWarning : reportWarning}
                   </p>
                   <p className="mt-0.5 text-xs text-warning-foreground/80">
                     Можно продолжить — такие строки и колонки будут пропущены при обработке.
@@ -1680,12 +1695,14 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-medium">
-                    {isSemantics ? semBlocked : reportBlocked}
+                    {isSemantics ? semBlocked : isCrossMinus ? crossBlocked : reportBlocked}
                   </p>
                   <p className="mt-0.5 text-xs">
                     {isSemantics
                       ? "Запуск невозможен. Исправьте источник или параметры."
-                      : "Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими колонками."}
+                      : isCrossMinus
+                        ? "Запуск невозможен. Замените файл — нужна выгрузка «Ключевые фразы» с показами по кампаниям."
+                        : "Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими колонками."}
                   </p>
                 </div>
               </div>
@@ -1731,6 +1748,35 @@ function CheckStep({
                       <dd className="text-foreground">{semanticsScenarioName(scenario)}</dd>
                     </>
                   )
+                ) : isCrossMinus ? (
+                  <>
+                    <dt className="text-muted-foreground">Формат</dt>
+                    <dd className="text-foreground">XLSX · 2,1 МБ</dd>
+                    <dt className="text-muted-foreground">Строк всего</dt>
+                    <dd className="text-foreground">8 412</dd>
+                    <dt className="text-muted-foreground">Кампаний</dt>
+                    <dd className="text-foreground">14</dd>
+                    <dt className="text-muted-foreground">Ключевых фраз</dt>
+                    <dd className="text-foreground">7 906</dd>
+                    <dt className="text-muted-foreground">Строк с показами</dt>
+                    <dd className="text-foreground">
+                      {state === "warning" ? "8 100 (312 без показов)" : "8 412"}
+                    </dd>
+                    <dt className="text-muted-foreground">Обязательные колонки</dt>
+                    <dd className="text-foreground">
+                      {state === "blocked"
+                        ? "Кампания, Фраза — найдены; Показы — не найдена"
+                        : "Кампания, Фраза, Показы — найдены"}
+                    </dd>
+                    <dt className="text-muted-foreground">Пересечения</dt>
+                    <dd className="text-foreground">
+                      {state === "blocked"
+                        ? "не определены"
+                        : state === "warning"
+                          ? "мало — результат может быть коротким"
+                          : "достаточно для расчёта"}
+                    </dd>
+                  </>
                 ) : (
                   <>
                     <dt className="text-muted-foreground">Строк</dt>
@@ -1755,7 +1801,8 @@ function CheckStep({
                 <li>· Формат результата: {resultFormatLabel[product.resultFormat]}</li>
                 <li>· Куда сохранится: Библиотека</li>
                 <li>
-                  · Ожидаемое время обработки: {isSemantics ? "~3–5 мин" : "~2 мин"}
+                  · Ожидаемое время обработки:{" "}
+                  {isSemantics ? "~3–5 мин" : isCrossMinus ? "~1–3 мин" : "~2 мин"}
                 </li>
               </ul>
             </div>
@@ -1767,7 +1814,7 @@ function CheckStep({
                   params={{ productId: product.id, step: "source" }}
                   search={navSearch}
                 >
-                  {state === "blocked" && isFileScenario
+                  {state === "blocked" && (isFileScenario || isCrossMinus)
                     ? "Заменить файл"
                     : "Изменить источник"}
                 </Link>
@@ -1840,15 +1887,20 @@ function RunStep({
   const search = Route.useSearch() as RunnerSearch;
   const isSemantics = product.id === "semantics-generator";
   const isCampaignAnalysis = product.id === "campaign-analysis";
+  const isCrossMinus = product.id === "cross-minus";
   const navSearch: Record<string, unknown> = search.scenario ? { scenario: search.scenario } : {};
   const headline = isCampaignAnalysis
     ? "Анализ выполняется"
-    : `${product.name} — идёт обработка`;
+    : isCrossMinus
+      ? "Считаем кросс-минусовку"
+      : `${product.name} — идёт обработка`;
   const eta = isSemantics
     ? "Подготовка Excel-файла · ~3–5 мин"
     : isCampaignAnalysis
       ? "Подготовка аналитического отчёта · ~2–3 мин"
-      : "Подготовка результата · ~2 мин";
+      : isCrossMinus
+        ? "Подготовка Excel-файла · ~1–3 мин"
+        : "Подготовка результата · ~2 мин";
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
@@ -1877,6 +1929,14 @@ function RunStep({
                 <li className="text-foreground">· Готовим выводы и инсайты…</li>
                 <li>· Формируем аналитический отчёт</li>
                 <li>· Сохраняем в Библиотеке</li>
+              </>
+            ) : isCrossMinus ? (
+              <>
+                <li>· Читаем источник</li>
+                <li>· Проверяем структуру и колонки</li>
+                <li className="text-foreground">· Считаем пересечения между кампаниями…</li>
+                <li>· Формируем списки минус-фраз</li>
+                <li>· Сохраняем Excel в Библиотеке</li>
               </>
             ) : (
               <>
@@ -1929,6 +1989,7 @@ function RunStep({
 function ResultStep({ product, projectId, steps: _steps }: { product: Product; projectId: string; steps: StepId[] }) {
   const search = Route.useSearch() as RunnerSearch;
   const isSemantics = product.id === "semantics-generator";
+  const isCrossMinus = product.id === "cross-minus";
   const scenario = search.scenario;
   // For excel results: saved=0 means local copy only; save=error means saving failed.
   const saved = search.saved !== 0;
@@ -1992,6 +2053,12 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
               Формат: {resultFormatLabel[product.resultFormat]}
               {isSemantics && scenario && ` · Сценарий: ${semanticsScenarioName(scenario)}`}
             </p>
+            {isCrossMinus && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Excel-файл содержит лист для загрузки в кампании и лист со списками
+                минус-фраз.
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2">
