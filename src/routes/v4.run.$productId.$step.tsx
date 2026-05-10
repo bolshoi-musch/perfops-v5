@@ -76,9 +76,15 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/v4/run/$productId/$step")({
-  head: ({ params }) => ({
-    meta: [{ title: `${stepLabel[params.step as StepId] ?? "Шаг"} — PerfOps` }],
-  }),
+  head: ({ params }) => {
+    const stepName = stepLabel[params.step as StepId] ?? "Шаг";
+    const processTitle =
+      params.productId === "dashboard-builder" ? "Подготовка дашборда" : null;
+    const title = processTitle
+      ? `${stepName} — ${processTitle} — PerfOps`
+      : `${stepName} — PerfOps`;
+    return { meta: [{ title }] };
+  },
   parseParams: (raw) => ({
     productId: String(raw.productId),
     step: stepSchema.parse(raw.step),
@@ -169,10 +175,19 @@ function titleFor(step: StepId, product: Product): string {
     case "run":
       return "Идёт обработка";
     case "result":
-      return `Результат готов`;
+      // Per-product result title.
+      if (product.resultFormat === "dashboard-link") return "Дашборд готов";
+      if (product.resultFormat === "excel") return "Файл готов";
+      return "Результат готов";
   }
   // Defensive: unreachable
   return product.name;
+}
+
+/** Process title displayed inside the runner — not the user-facing product name. */
+function processTitleFor(product: Product): string | undefined {
+  if (product.id === "dashboard-builder") return "Подготовка дашборда";
+  return undefined;
 }
 
 function subtitleFor(step: StepId, product: Product): string | undefined {
@@ -861,7 +876,11 @@ function CombiningStep({
   projectId: string;
   steps: StepId[];
 }) {
-  const [plan, setPlan] = useState<"by-keys" | "concat" | "manual">("by-keys");
+  // Internal merge codes preserved for data: append_strict | append_union | join | manual_join.
+  // UI exposes only Russian human labels.
+  const [plan, setPlan] = useState<
+    "join" | "append_strict" | "append_union" | "manual_join"
+  >("join");
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
@@ -924,23 +943,29 @@ function CombiningStep({
               </p>
               <div className="grid gap-2">
                 <PlanRow
-                  active={plan === "by-keys"}
-                  onClick={() => setPlan("by-keys")}
-                  title="Связать по ключам"
-                  desc="Найдено совпадение по колонкам campaign_id и date."
+                  active={plan === "join"}
+                  onClick={() => setPlan("join")}
+                  title="Объединить столбцы по ключам"
+                  desc="Подходит, если источники нужно связать по дате, кампании или другому ключу."
                   badge="Рекомендуется"
                 />
                 <PlanRow
-                  active={plan === "concat"}
-                  onClick={() => setPlan("concat")}
-                  title="Объединить строки"
-                  desc="Структуры совпадают — можно склеить как одну таблицу."
+                  active={plan === "append_strict"}
+                  onClick={() => setPlan("append_strict")}
+                  title="Добавить строки"
+                  desc="Подходит, если источники имеют одинаковую структуру."
                 />
                 <PlanRow
-                  active={plan === "manual"}
-                  onClick={() => setPlan("manual")}
+                  active={plan === "append_union"}
+                  onClick={() => setPlan("append_union")}
+                  title="Расширить структуру"
+                  desc="Добавляет недостающие столбцы из второго источника."
+                />
+                <PlanRow
+                  active={plan === "manual_join"}
+                  onClick={() => setPlan("manual_join")}
                   title="Выбрать ключи вручную"
-                  desc="Указать колонки соответствия самостоятельно."
+                  desc="Используйте, если автоматическое сопоставление не подходит."
                 />
               </div>
             </div>
@@ -950,9 +975,10 @@ function CombiningStep({
       <HelpCard
         title="Как работает объединение"
         items={[
-          "Связать по ключам — если в обоих источниках есть общие колонки",
-          "Объединить строки — если структура одинаковая",
-          "Вручную — для нестандартных случаев",
+          "Объединить столбцы по ключам — если в обоих источниках есть общие колонки",
+          "Добавить строки — если структура одинаковая",
+          "Расширить структуру — добавит недостающие столбцы",
+          "Выбрать ключи вручную — для нестандартных случаев",
         ]}
       />
       <div className="lg:col-span-3">
