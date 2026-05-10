@@ -1550,6 +1550,7 @@ function RunStep({
 // --------------------- Result ---------------------
 
 function ResultStep({ product, projectId, steps: _steps }: { product: Product; projectId: string; steps: StepId[] }) {
+  const search = Route.useSearch() as RunnerSearch;
   const PrimaryIcon =
     product.resultFormat === "excel"
       ? Download
@@ -1562,6 +1563,8 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
       : product.resultFormat === "dashboard-link"
         ? "Открыть дашборд"
         : "Открыть отчёт";
+  const showDashboardCta =
+    product.resultFormat === "analytics-report" && search.dashboard === 1;
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -1588,6 +1591,11 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
             <Button>
               <PrimaryIcon className="h-3.5 w-3.5" /> {primaryLabel}
             </Button>
+            {showDashboardCta && (
+              <Button variant="outline">
+                <ExternalLink className="h-3.5 w-3.5" /> Открыть дашборд
+              </Button>
+            )}
             <Button variant="outline" asChild>
               <Link to="/v4/library">Открыть Библиотеку</Link>
             </Button>
