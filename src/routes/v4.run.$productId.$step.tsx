@@ -2346,6 +2346,8 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
   const search = Route.useSearch() as RunnerSearch;
   const isSemantics = product.id === "semantics-generator";
   const isCrossMinus = product.id === "cross-minus";
+  const isBd = product.id === "bd-optimization";
+  const bdScenario = isBd ? search.scenario : undefined;
   const scenario = search.scenario;
   // For excel results: saved=0 means local copy only; save=error means saving failed.
   const saved = search.saved !== 0;
@@ -2413,6 +2415,18 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
               <p className="mt-2 text-xs text-muted-foreground">
                 Excel-файл содержит лист для загрузки в кампании и лист со списками
                 минус-фраз.
+              </p>
+            )}
+            {isBd && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Excel-файл содержит листы со словами, биграммами и триграммами с
+                агрегированной статистикой
+                {bdScenario === "losses"
+                  ? " и метриками атрибуцированных потерь"
+                  : bdScenario === "cannib"
+                    ? " и метриками каннибализации"
+                    : " и метриками по выбранному сценарию"}
+                .
               </p>
             )}
           </div>

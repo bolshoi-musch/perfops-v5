@@ -55,6 +55,7 @@ import { Route as V4RunSemanticsGeneratorRecoveryRouteImport } from './routes/v4
 import { Route as V4RunDashboardBuilderRecoveryRouteImport } from './routes/v4.run.dashboard-builder.recovery'
 import { Route as V4RunCrossMinusRecoveryRouteImport } from './routes/v4.run.cross-minus.recovery'
 import { Route as V4RunCampaignAnalysisRecoveryRouteImport } from './routes/v4.run.campaign-analysis.recovery'
+import { Route as V4RunBdOptimizationRecoveryRouteImport } from './routes/v4.run.bd-optimization.recovery'
 import { Route as V4RunProductIdStepRouteImport } from './routes/v4.run.$productId.$step'
 import { Route as V3ToolsProductIdSourceRouteImport } from './routes/v3.tools.$productId.source'
 import { Route as V3ToolsProductIdReviewRouteImport } from './routes/v3.tools.$productId.review'
@@ -294,6 +295,12 @@ const V4RunCampaignAnalysisRecoveryRoute =
     path: '/v4/run/campaign-analysis/recovery',
     getParentRoute: () => rootRouteImport,
   } as any)
+const V4RunBdOptimizationRecoveryRoute =
+  V4RunBdOptimizationRecoveryRouteImport.update({
+    id: '/v4/run/bd-optimization/recovery',
+    path: '/v4/run/bd-optimization/recovery',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const V4RunProductIdStepRoute = V4RunProductIdStepRouteImport.update({
   id: '/v4/run/$productId/$step',
   path: '/v4/run/$productId/$step',
@@ -369,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/v3/tools/$productId/review': typeof V3ToolsProductIdReviewRoute
   '/v3/tools/$productId/source': typeof V3ToolsProductIdSourceRoute
   '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
+  '/v4/run/bd-optimization/recovery': typeof V4RunBdOptimizationRecoveryRoute
   '/v4/run/campaign-analysis/recovery': typeof V4RunCampaignAnalysisRecoveryRoute
   '/v4/run/cross-minus/recovery': typeof V4RunCrossMinusRecoveryRoute
   '/v4/run/dashboard-builder/recovery': typeof V4RunDashboardBuilderRecoveryRoute
@@ -422,6 +430,7 @@ export interface FileRoutesByTo {
   '/v3/tools/$productId/review': typeof V3ToolsProductIdReviewRoute
   '/v3/tools/$productId/source': typeof V3ToolsProductIdSourceRoute
   '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
+  '/v4/run/bd-optimization/recovery': typeof V4RunBdOptimizationRecoveryRoute
   '/v4/run/campaign-analysis/recovery': typeof V4RunCampaignAnalysisRecoveryRoute
   '/v4/run/cross-minus/recovery': typeof V4RunCrossMinusRecoveryRoute
   '/v4/run/dashboard-builder/recovery': typeof V4RunDashboardBuilderRecoveryRoute
@@ -476,6 +485,7 @@ export interface FileRoutesById {
   '/v3/tools/$productId/review': typeof V3ToolsProductIdReviewRoute
   '/v3/tools/$productId/source': typeof V3ToolsProductIdSourceRoute
   '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
+  '/v4/run/bd-optimization/recovery': typeof V4RunBdOptimizationRecoveryRoute
   '/v4/run/campaign-analysis/recovery': typeof V4RunCampaignAnalysisRecoveryRoute
   '/v4/run/cross-minus/recovery': typeof V4RunCrossMinusRecoveryRoute
   '/v4/run/dashboard-builder/recovery': typeof V4RunDashboardBuilderRecoveryRoute
@@ -531,6 +541,7 @@ export interface FileRouteTypes {
     | '/v3/tools/$productId/review'
     | '/v3/tools/$productId/source'
     | '/v4/run/$productId/$step'
+    | '/v4/run/bd-optimization/recovery'
     | '/v4/run/campaign-analysis/recovery'
     | '/v4/run/cross-minus/recovery'
     | '/v4/run/dashboard-builder/recovery'
@@ -584,6 +595,7 @@ export interface FileRouteTypes {
     | '/v3/tools/$productId/review'
     | '/v3/tools/$productId/source'
     | '/v4/run/$productId/$step'
+    | '/v4/run/bd-optimization/recovery'
     | '/v4/run/campaign-analysis/recovery'
     | '/v4/run/cross-minus/recovery'
     | '/v4/run/dashboard-builder/recovery'
@@ -637,6 +649,7 @@ export interface FileRouteTypes {
     | '/v3/tools/$productId/review'
     | '/v3/tools/$productId/source'
     | '/v4/run/$productId/$step'
+    | '/v4/run/bd-optimization/recovery'
     | '/v4/run/campaign-analysis/recovery'
     | '/v4/run/cross-minus/recovery'
     | '/v4/run/dashboard-builder/recovery'
@@ -679,6 +692,7 @@ export interface RootRouteChildren {
   V3ToolsProductIdReviewRoute: typeof V3ToolsProductIdReviewRoute
   V3ToolsProductIdSourceRoute: typeof V3ToolsProductIdSourceRoute
   V4RunProductIdStepRoute: typeof V4RunProductIdStepRoute
+  V4RunBdOptimizationRecoveryRoute: typeof V4RunBdOptimizationRecoveryRoute
   V4RunCampaignAnalysisRecoveryRoute: typeof V4RunCampaignAnalysisRecoveryRoute
   V4RunCrossMinusRecoveryRoute: typeof V4RunCrossMinusRecoveryRoute
   V4RunDashboardBuilderRecoveryRoute: typeof V4RunDashboardBuilderRecoveryRoute
@@ -1009,6 +1023,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V4RunCampaignAnalysisRecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v4/run/bd-optimization/recovery': {
+      id: '/v4/run/bd-optimization/recovery'
+      path: '/v4/run/bd-optimization/recovery'
+      fullPath: '/v4/run/bd-optimization/recovery'
+      preLoaderRoute: typeof V4RunBdOptimizationRecoveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v4/run/$productId/$step': {
       id: '/v4/run/$productId/$step'
       path: '/v4/run/$productId/$step'
@@ -1145,6 +1166,7 @@ const rootRouteChildren: RootRouteChildren = {
   V3ToolsProductIdReviewRoute: V3ToolsProductIdReviewRoute,
   V3ToolsProductIdSourceRoute: V3ToolsProductIdSourceRoute,
   V4RunProductIdStepRoute: V4RunProductIdStepRoute,
+  V4RunBdOptimizationRecoveryRoute: V4RunBdOptimizationRecoveryRoute,
   V4RunCampaignAnalysisRecoveryRoute: V4RunCampaignAnalysisRecoveryRoute,
   V4RunCrossMinusRecoveryRoute: V4RunCrossMinusRecoveryRoute,
   V4RunDashboardBuilderRecoveryRoute: V4RunDashboardBuilderRecoveryRoute,

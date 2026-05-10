@@ -835,6 +835,134 @@ const crossMinusExamples: CrossMinusExample[] = [
   },
 ];
 
+// --------------------- Example: BD Optimization ---------------------
+
+const bdOptimizationExamples: CrossMinusExample[] = [
+  {
+    group: "Источник · stats-файл (опционально)",
+    tone: "info",
+    title: "Дополнительный stats-файл прикреплён",
+    example: (
+      <div className="rounded-md border bg-card px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-foreground">
+          <FileSpreadsheet className="h-4 w-4 text-info" />
+          query_stats.xlsx
+          <span className="text-xs font-normal text-muted-foreground">· опц.</span>
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Используется для расширенной статистики по запросам.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Параметры · сценарий",
+    tone: "neutral",
+    title: "Каннибализация / Атрибуцированные потери",
+    example: (
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="rounded-md border border-primary bg-card px-3 py-2 ring-1 ring-primary/30">
+          <p className="text-sm font-medium text-foreground">Каннибализация</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Пересечения и перетягивание трафика.
+          </p>
+        </div>
+        <div className="rounded-md border bg-card px-3 py-2">
+          <p className="text-sm font-medium text-foreground">Атрибуцированные потери</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Потери, приписанные другим запросам.
+          </p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    group: "Параметры · multi-sheet",
+    tone: "info",
+    title: "В файле несколько листов",
+    example: (
+      <div className="rounded-md border bg-info-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-info">
+          <Info className="h-4 w-4" /> 3 листа: Все / Brand / Generic
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          По умолчанию — все листы. Можно выбрать один.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (clean)",
+    tone: "success",
+    title: "Источник подходит для расчёта",
+    example: (
+      <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
+        <CheckCircle2 className="h-4 w-4" />
+        Запросы, расходы, клики и конверсии найдены.
+      </div>
+    ),
+  },
+  {
+    group: "Проверка · сценарий не совпал",
+    tone: "blocked",
+    title: "В файле нет данных для выбранного сценария",
+    example: (
+      <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm text-destructive">
+        <p className="flex items-center gap-2 font-medium">
+          <CircleSlash className="h-4 w-4" /> Нет данных для «Атрибуцированные потери»
+        </p>
+        <p className="mt-1 text-xs">
+          Поменяйте сценарий или замените файл.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Идёт обработка",
+    tone: "processing",
+    title: "Считаем слова, биграммы, триграммы…",
+    example: (
+      <div className="flex items-center gap-3 rounded-md border bg-accent px-3 py-2 text-sm">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <span className="text-foreground">Нормализуем запросы и считаем метрики…</span>
+      </div>
+    ),
+  },
+  {
+    group: "Результат сохранён",
+    tone: "success",
+    title: "Excel-файл готов и сохранён в Библиотеке",
+    example: (
+      <div className="rounded-md border border-success/30 bg-success-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-success">
+          <CheckCircle2 className="h-4 w-4" /> Файл готов
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Слова, биграммы и триграммы с метриками каннибализации.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button size="sm">
+            <Download className="h-3 w-3" /> Скачать Excel-файл
+          </Button>
+          <Button size="sm" variant="outline">Открыть Библиотеку</Button>
+        </div>
+      </div>
+    ),
+  },
+  {
+    group: "Recovery",
+    tone: "warning",
+    title: "Сессия BD Optimization устарела",
+    example: (
+      <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-warning-foreground">
+          <LifeBuoy className="h-4 w-4" /> Запустите расчёт заново
+        </p>
+      </div>
+    ),
+  },
+];
+
 
 function FlowStatesPage() {
   return (
@@ -1016,6 +1144,49 @@ function FlowStatesPage() {
         </p>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {crossMinusExamples.map((s, i) => {
+            const tone = toneStyles[s.tone];
+            return (
+              <Card key={i} className="border bg-card shadow-none">
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {s.group}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
+                        {s.title}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-mono lowercase",
+                        tone.chip,
+                      )}
+                    >
+                      {tone.label}
+                    </span>
+                  </div>
+                  <div className="rounded-md border-t pt-3">{s.example}</div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Subsection: BD Optimization. */}
+      <section className="mt-10 border-t pt-6">
+        <h2 className="text-base font-semibold text-foreground">
+          Пример: BD Optimization
+        </h2>
+        <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+          Те же общие тональности применены к BD Optimization. Добавлены
+          специфичные состояния: stats-файл, выбор сценария, multi-sheet и
+          mismatch-сценария.
+        </p>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {bdOptimizationExamples.map((s, i) => {
             const tone = toneStyles[s.tone];
             return (
               <Card key={i} className="border bg-card shadow-none">
