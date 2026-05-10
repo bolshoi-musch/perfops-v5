@@ -86,6 +86,10 @@ type RunnerSearch = {
   scenario?: string;
   saved?: number;
   save?: SaveState;
+  // bd-optimization specific
+  stats?: number;     // 1 — stats-файл прикреплён (для демо состояния источника)
+  multisheet?: number; // 1 — обнаружен multi-sheet файл (показать SheetSelector)
+  mismatch?: number;   // 1 — на check показать blocked-substate "сценарий не совпал"
 };
 const searchSchema = z.object({
   second: z.coerce.number().optional(),
@@ -95,6 +99,9 @@ const searchSchema = z.object({
   scenario: z.string().optional(),
   saved: z.coerce.number().optional(),
   save: z.enum(["ok", "error"]).optional(),
+  stats: z.coerce.number().optional(),
+  multisheet: z.coerce.number().optional(),
+  mismatch: z.coerce.number().optional(),
 });
 
 // ---- Semantics scenarios: per-scenario source/params config ----
