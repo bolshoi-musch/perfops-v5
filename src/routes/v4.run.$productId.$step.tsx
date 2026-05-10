@@ -194,6 +194,7 @@ function titleFor(step: StepId, product: Product): string {
       // Per-product result title.
       if (product.resultFormat === "dashboard-link") return "Дашборд готов";
       if (product.resultFormat === "excel") return "Файл готов";
+      if (product.resultFormat === "analytics-report") return "Аналитический отчёт готов";
       return "Результат готов";
   }
   // Defensive: unreachable
