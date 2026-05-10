@@ -125,6 +125,7 @@ const PROCESS_TITLES: Record<string, string> = {
   "dashboard-builder": "Подготовка дашборда",
   "campaign-analysis": "Анализ рекламных кампаний",
   "semantics-generator": "Сбор и обработка семантики",
+  "cross-minus": "Кросс-минусовка",
 };
 
 export const Route = createFileRoute("/v4/run/$productId/$step")({
