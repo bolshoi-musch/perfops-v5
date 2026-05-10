@@ -1709,6 +1709,157 @@ function MetricsStep({
   );
 }
 
+// --------------------- BD Optimization params ---------------------
+
+function BdOptimizationParamsStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
+  const search = Route.useSearch() as RunnerSearch;
+  const navigate = useNavigate();
+  // Default to "cannib" if scenario not in BD set yet.
+  const scenario =
+    search.scenario && BD_SCENARIOS.some((s) => s.id === search.scenario)
+      ? search.scenario
+      : "cannib";
+  const isMultiSheet = search.multisheet === 1;
+  const setScenario = (id: string) => {
+    navigate({
+      to: "/v4/run/$productId/$step",
+      params: { productId: product.id, step: "params" },
+      search: { ...search, scenario: id },
+      replace: true,
+    });
+  };
+  const [sheetMode, setSheetMode] = useState<"all" | "single">("all");
+  const [sheetName, setSheetName] = useState<string>("Поисковые запросы");
+  const sheetNames = ["Поисковые запросы", "Кампании", "Группы объявлений", "Сводка"];
+
+  const navSearch: Record<string, unknown> = { ...search };
+  // strip url-only flags from forward navigation
+  if (!navSearch.scenario) navSearch.scenario = scenario;
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <Card className="border bg-card shadow-none lg:col-span-2">
+        <CardContent className="space-y-5 p-5">
+          <div>
+            <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+              Сценарий
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {BD_SCENARIOS.map((s) => {
+                const active = scenario === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setScenario(s.id)}
+                    className={cn(
+                      "rounded-md border bg-card px-3 py-2.5 text-left transition-colors",
+                      active
+                        ? "border-primary ring-1 ring-primary/30"
+                        : "hover:border-border-strong",
+                    )}
+                  >
+                    <p className="text-sm font-medium text-foreground">{s.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {s.description}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {isMultiSheet && (
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                Листы файла
+              </p>
+              <p className="mb-2 text-xs text-muted-foreground">
+                В файле найдено несколько листов. Выберите, что обрабатывать.
+              </p>
+              <div className="space-y-2">
+                <label className="flex cursor-pointer items-start gap-2 rounded-md border bg-card px-3 py-2 hover:border-border-strong">
+                  <input
+                    type="radio"
+                    name="bd-sheets"
+                    checked={sheetMode === "all"}
+                    onChange={() => setSheetMode("all")}
+                    className="mt-1 h-3.5 w-3.5 accent-primary"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      Обработать все листы
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Соберём данные со всех листов в один расчёт.
+                    </p>
+                  </div>
+                </label>
+                <label className="flex cursor-pointer items-start gap-2 rounded-md border bg-card px-3 py-2 hover:border-border-strong">
+                  <input
+                    type="radio"
+                    name="bd-sheets"
+                    checked={sheetMode === "single"}
+                    onChange={() => setSheetMode("single")}
+                    className="mt-1 h-3.5 w-3.5 accent-primary"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Выбрать один лист
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Расчёт пойдёт только по выбранному листу.
+                    </p>
+                    {sheetMode === "single" && (
+                      <select
+                        value={sheetName}
+                        onChange={(e) => setSheetName(e.target.value)}
+                        className="mt-2 h-8 rounded-md border bg-card px-2 text-xs text-foreground"
+                      >
+                        {sheetNames.map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      <HelpCard
+        title="Подсказки"
+        items={[
+          "Сценарий определяет набор обязательных колонок и метрик в Excel-файле",
+          isMultiSheet
+            ? "Можно сменить сценарий или выбор листа без повторной загрузки"
+            : "Сменить сценарий можно без повторной загрузки источника",
+        ]}
+      />
+      <div className="lg:col-span-3">
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="params"
+          projectId={projectId}
+          search={navSearch}
+        />
+      </div>
+    </div>
+  );
+}
+
 // --------------------- Check ---------------------
 
 function CheckStep({
