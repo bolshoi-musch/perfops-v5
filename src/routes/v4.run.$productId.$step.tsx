@@ -240,8 +240,7 @@ function titleFor(step: StepId, product: Product): string {
 
 /** Process title displayed inside the runner — not the user-facing product name. */
 function processTitleFor(product: Product): string | undefined {
-  if (product.id === "dashboard-builder") return "Подготовка дашборда";
-  return undefined;
+  return PROCESS_TITLES[product.id];
 }
 
 function subtitleFor(step: StepId, product: Product): string | undefined {
