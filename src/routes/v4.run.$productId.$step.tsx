@@ -1166,47 +1166,7 @@ function ParamsStep({
   steps: StepId[];
 }) {
   if (product.id === "semantics-generator") {
-    return (
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="border bg-card shadow-none lg:col-span-2">
-          <CardContent className="space-y-4 p-5">
-            <ParamRow label="Количество фраз" hint="до 20 000">
-              <Input defaultValue="5000" className="h-9 w-32 text-sm" />
-            </ParamRow>
-            <ParamRow label="Максимальная длина фразы" hint="в словах">
-              <Input defaultValue="6" className="h-9 w-32 text-sm" />
-            </ParamRow>
-            <ParamRow label="Минус-слова" hint="через запятую или с новой строки">
-              <Textarea
-                placeholder="бесплатно, скачать, отзывы…"
-                className="min-h-[72px] text-sm"
-              />
-            </ParamRow>
-            <ParamRow label="Файл с минус-словами" hint=".txt или .xlsx">
-              <Button size="sm" variant="outline">
-                <Upload className="h-3.5 w-3.5" /> Загрузить файл
-              </Button>
-            </ParamRow>
-          </CardContent>
-        </Card>
-        <HelpCard
-          title="Подсказки"
-          items={[
-            "Если не уверены в количестве — оставьте 5 000",
-            "Минус-слова можно загрузить файлом из Библиотеки",
-            "Изменение параметров не сбрасывает источник",
-          ]}
-        />
-        <div className="lg:col-span-3">
-          <FlowActionBar
-            product={product}
-            steps={steps}
-            current="params"
-            projectId={projectId}
-          />
-        </div>
-      </div>
-    );
+    return <SemanticsParamsStep product={product} projectId={projectId} steps={steps} />;
   }
 
   return (
