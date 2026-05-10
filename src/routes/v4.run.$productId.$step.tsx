@@ -449,16 +449,32 @@ function SourceStep({
     });
   };
 
-  const sourceHelp: string[] = [
-    `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
-    ...(product.supportedConnections.length > 0
-      ? ["Можно выбрать подключённый аккаунт"]
-      : []),
-    "Можно выбрать источник из Библиотеки",
-    ...(product.supportsSecondSource
-      ? ["Второй источник равноправен первому: те же варианты"]
-      : []),
-  ];
+  const sourceHelp: string[] = isSemantics
+    ? [
+        scenario === "cluster"
+          ? "Загрузите файл с готовым списком фраз: TXT, CSV или XLSX"
+          : scenario === "expand"
+            ? "Можно вставить seed-список или загрузить файл с фразами"
+            : "Можно указать тему, ссылку или загрузить файл",
+        "Можно выбрать источник из Библиотеки",
+        ...(scenario === "cluster"
+          ? ["Текстовый столбец определим автоматически — указать его можно в параметрах"]
+          : []),
+      ]
+    : [
+        `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
+        ...(product.supportedConnections.length > 0
+          ? ["Можно выбрать подключённый аккаунт"]
+          : []),
+        "Можно выбрать источник из Библиотеки",
+        ...(product.supportsSecondSource
+          ? ["Второй источник равноправен первому: те же варианты"]
+          : []),
+      ];
+
+  const navSearch: Record<string, unknown> = {};
+  if (hasSecondSource) navSearch.second = 1;
+  if (scenario) navSearch.scenario = scenario;
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -469,7 +485,7 @@ function SourceStep({
               {product.supportsSecondSource ? "Источник 1 · тип" : "Тип источника"}
             </p>
             <div className="flex flex-wrap gap-2">
-              {product.allowedSources.map((k) => {
+              {effectiveSources.map((k) => {
                 const Icon = sourceIcon[k];
                 const active = activeKind === k;
                 return (
@@ -498,6 +514,7 @@ function SourceStep({
                 hasFile={hasFile}
                 onClearFile={() => setHasFile(false)}
                 onAttachFile={() => setHasFile(true)}
+                scenario={scenario}
               />
             </div>
           </CardContent>
