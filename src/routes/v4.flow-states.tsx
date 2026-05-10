@@ -397,6 +397,154 @@ const dashbotExamples: DashbotExample[] = [
   },
 ];
 
+// --------------------- Example: Анализ кампаний ---------------------
+// Те же общие тональности, применённые к процессу «Анализ рекламных кампаний».
+
+interface CampaignAnalysisExample {
+  group: string;
+  tone: Tone;
+  title: string;
+  example: ReactNode;
+}
+
+const campaignAnalysisExamples: CampaignAnalysisExample[] = [
+  {
+    group: "Источник не выбран",
+    tone: "neutral",
+    title: "Файл со статистикой не загружен",
+    example: (
+      <div className="rounded-md border border-dashed bg-surface px-4 py-6 text-center">
+        <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
+        <p className="mt-2 text-sm font-medium text-foreground">
+          Загрузите выгрузку рекламной статистики
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          CSV или XLSX, до 5 МБ. Также можно выбрать подключение или источник из Библиотеки.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Метрики и фокус — нераспознанные колонки",
+    tone: "warning",
+    title: "Часть колонок не распознана",
+    example: (
+      <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-warning-foreground">
+          <AlertTriangle className="h-4 w-4" /> 3 колонки требуют уточнения типа
+        </p>
+        <p className="mt-1 text-xs text-warning-foreground/80">
+          Укажите для каждой: абсолютная, относительная или пропустить.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Метрики — нет абсолютной",
+    tone: "blocked",
+    title: "Выбраны только относительные метрики",
+    example: (
+      <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm text-destructive">
+        <p className="flex items-center gap-2 font-medium">
+          <CircleSlash className="h-4 w-4" /> Хотя бы одна метрика должна быть абсолютной
+        </p>
+        <p className="mt-1 text-xs">
+          Например: клики, конверсии или расход.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (clean)",
+    tone: "success",
+    title: "Источник принят, метрики выбраны",
+    example: (
+      <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
+        <CheckCircle2 className="h-4 w-4" />
+        Структура выгрузки в порядке, можно запускать анализ.
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (warning)",
+    tone: "warning",
+    title: "Есть пустые значения",
+    example: (
+      <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-warning-foreground">
+          <AlertTriangle className="h-4 w-4" /> 14 строк с пустой валютой
+        </p>
+        <p className="mt-1 text-xs text-warning-foreground/80">
+          Можно продолжить — такие строки будут пропущены.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (blocked)",
+    tone: "blocked",
+    title: "Не хватает обязательных колонок",
+    example: (
+      <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm text-destructive">
+        <p className="flex items-center gap-2 font-medium">
+          <CircleSlash className="h-4 w-4" /> Нет колонок campaign_id и date
+        </p>
+        <p className="mt-1 text-xs">
+          Запуск невозможен. Загрузите выгрузку с этими колонками.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Идёт обработка",
+    tone: "processing",
+    title: "Анализ кампаний",
+    example: (
+      <div className="flex items-center gap-3 rounded-md border bg-accent px-3 py-2 text-sm">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <span className="text-foreground">Готовим аналитический отчёт…</span>
+      </div>
+    ),
+  },
+  {
+    group: "Результат готов",
+    tone: "success",
+    title: "Аналитический отчёт готов",
+    example: (
+      <div className="rounded-md border border-success/30 bg-success-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-success">
+          <CheckCircle2 className="h-4 w-4" /> Отчёт готов и сохранён в Библиотеке
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button size="sm">
+            <ExternalLink className="h-3 w-3" /> Открыть отчёт
+          </Button>
+          <Button size="sm" variant="outline">
+            <ExternalLink className="h-3 w-3" /> Открыть дашборд
+          </Button>
+        </div>
+      </div>
+    ),
+  },
+  {
+    group: "Результат не готов",
+    tone: "warning",
+    title: "Отчёт ещё не готов",
+    example: (
+      <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-warning-foreground">
+          <Info className="h-4 w-4" /> Анализ ещё выполняется или произошла ошибка
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button size="sm" variant="outline">
+            <RotateCcw className="h-3 w-3" /> Обновить
+          </Button>
+        </div>
+      </div>
+    ),
+  },
+];
+
 function FlowStatesPage() {
   return (
     <AppShellV4>
