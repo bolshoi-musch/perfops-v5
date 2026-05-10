@@ -1948,7 +1948,9 @@ function CheckStep({
                   ? "Источник принят, всё готово к запуску."
                   : isCrossMinus
                     ? "Источник подходит для запуска: найдены кампании, ключевые фразы и показы."
-                    : "Источник принят, структура соответствует ожиданиям. Можно запускать."}
+                    : isBd
+                      ? `Источник подходит для сценария «${bdScenarioName(bdScenario)}». Можно запускать.`
+                      : "Источник принят, структура соответствует ожиданиям. Можно запускать."}
               </div>
             )}
             {state === "warning" && (
@@ -1956,7 +1958,7 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
                 <div>
                   <p className="font-medium text-warning-foreground">
-                    {isSemantics ? semWarning : isCrossMinus ? crossWarning : reportWarning}
+                    {isSemantics ? semWarning : isCrossMinus ? crossWarning : isBd ? bdWarning : reportWarning}
                   </p>
                   <p className="mt-0.5 text-xs text-warning-foreground/80">
                     Можно продолжить — такие строки и колонки будут пропущены при обработке.
@@ -1969,16 +1971,39 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-medium">
-                    {isSemantics ? semBlocked : isCrossMinus ? crossBlocked : reportBlocked}
+                    {isSemantics ? semBlocked : isCrossMinus ? crossBlocked : isBd ? bdBlocked : reportBlocked}
                   </p>
                   <p className="mt-0.5 text-xs">
                     {isSemantics
                       ? "Запуск невозможен. Исправьте источник или параметры."
                       : isCrossMinus
                         ? "Запуск невозможен. Замените файл — нужна выгрузка «Ключевые фразы» с показами по кампаниям."
-                        : "Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими колонками."}
+                        : isBd
+                          ? bdMismatch
+                            ? "Запуск невозможен. Смените сценарий на подходящий или замените файл."
+                            : "Запуск невозможен. Замените файл — нужна выгрузка с поисковыми запросами и расходом."
+                          : "Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими колонками."}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {isBd && bdScenario && (
+              <div className="rounded-md border bg-surface px-3 py-2 text-xs">
+                <span className="text-muted-foreground">Сценарий: </span>
+                <span className="font-medium text-foreground">
+                  {bdScenarioName(bdScenario)}
+                </span>
+                {hasStats && (
+                  <span className="ml-1.5 text-muted-foreground">
+                    · подключён файл со статистикой запросов
+                  </span>
+                )}
+                {isMultiSheet && (
+                  <span className="ml-1.5 text-muted-foreground">
+                    · multi-sheet файл
+                  </span>
+                )}
               </div>
             )}
 
