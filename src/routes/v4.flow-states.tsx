@@ -677,6 +677,164 @@ const semanticsExamples: SemanticsExample[] = [
   },
 ];
 
+// --------------------- Example: Кросс-минусовка ---------------------
+
+interface CrossMinusExample {
+  group: string;
+  tone: Tone;
+  title: string;
+  example: ReactNode;
+}
+
+const crossMinusExamples: CrossMinusExample[] = [
+  {
+    group: "Источник не выбран",
+    tone: "neutral",
+    title: "Загрузите выгрузку или выберите источник",
+    example: (
+      <div className="rounded-md border border-dashed bg-surface px-4 py-6 text-center">
+        <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
+        <p className="mt-2 text-sm font-medium text-foreground">
+          Перетащите файл сюда
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">.xlsx, .csv · до 50 МБ</p>
+      </div>
+    ),
+  },
+  {
+    group: "Источник выбран · файл",
+    tone: "success",
+    title: "Файл принят",
+    example: (
+      <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm">
+        <FileSpreadsheet className="h-4 w-4 text-success" />
+        <span className="font-medium text-foreground">keywords_export.xlsx</span>
+        <span className="text-xs text-muted-foreground">· 2,1 МБ · принят</span>
+      </div>
+    ),
+  },
+  {
+    group: "Источник · ошибка файла",
+    tone: "blocked",
+    title: "Файл превышает 50 МБ",
+    example: (
+      <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm text-destructive">
+        <p className="flex items-center gap-2 font-medium">
+          <CircleSlash className="h-4 w-4" /> Файл превышает 50 МБ
+        </p>
+        <p className="mt-1 text-xs">
+          Попробуйте выгрузить меньший период.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (clean)",
+    tone: "success",
+    title: "Источник подходит для запуска",
+    example: (
+      <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
+        <CheckCircle2 className="h-4 w-4" />
+        Найдены кампании, ключевые фразы и показы.
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (warning)",
+    tone: "warning",
+    title: "Часть строк будет пропущена",
+    example: (
+      <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-warning-foreground">
+          <AlertTriangle className="h-4 w-4" /> 312 строк без показов · 47 повторов
+        </p>
+        <p className="mt-1 text-xs text-warning-foreground/80">
+          Можно продолжить — пустые показы и дубли отфильтруются.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (blocked)",
+    tone: "blocked",
+    title: "Не найдена обязательная колонка «Показы»",
+    example: (
+      <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm text-destructive">
+        <p className="flex items-center gap-2 font-medium">
+          <CircleSlash className="h-4 w-4" /> Без показов посчитать пересечения нельзя
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Идёт обработка",
+    tone: "processing",
+    title: "Считаем кросс-минусовку",
+    example: (
+      <div className="flex items-center gap-3 rounded-md border bg-accent px-3 py-2 text-sm">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <span className="text-foreground">Считаем пересечения между кампаниями…</span>
+      </div>
+    ),
+  },
+  {
+    group: "Результат сохранён",
+    tone: "success",
+    title: "Excel-файл готов и сохранён в Библиотеке",
+    example: (
+      <div className="rounded-md border border-success/30 bg-success-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-success">
+          <CheckCircle2 className="h-4 w-4" /> Файл готов
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Лист для загрузки в кампании и лист со списками минус-фраз.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button size="sm">
+            <Download className="h-3 w-3" /> Скачать Excel-файл
+          </Button>
+          <Button size="sm" variant="outline">Открыть Библиотеку</Button>
+        </div>
+      </div>
+    ),
+  },
+  {
+    group: "Результат · сохранение не удалось",
+    tone: "blocked",
+    title: "Не удалось сохранить в Библиотеку",
+    example: (
+      <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm text-destructive">
+        <p className="flex items-center gap-2 font-medium">
+          <XCircle className="h-4 w-4" /> Сохранение в Библиотеку не удалось
+        </p>
+        <p className="mt-1 text-xs">
+          Файл готов и его можно скачать. Сохранение можно повторить.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button size="sm">
+            <Download className="h-3 w-3" /> Скачать Excel-файл
+          </Button>
+          <Button size="sm" variant="outline">
+            <RotateCcw className="h-3 w-3" /> Повторить сохранение
+          </Button>
+        </div>
+      </div>
+    ),
+  },
+  {
+    group: "Recovery",
+    tone: "warning",
+    title: "Сессия кросс-минусовки устарела",
+    example: (
+      <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-warning-foreground">
+          <LifeBuoy className="h-4 w-4" /> Запустите расчёт заново
+        </p>
+      </div>
+    ),
+  },
+];
+
 
 function FlowStatesPage() {
   return (
