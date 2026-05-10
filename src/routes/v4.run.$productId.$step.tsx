@@ -133,7 +133,26 @@ const PROCESS_TITLES: Record<string, string> = {
   "campaign-analysis": "Анализ рекламных кампаний",
   "semantics-generator": "Сбор и обработка семантики",
   "cross-minus": "Кросс-минусовка",
+  "bd-optimization": "BD Optimization",
 };
+
+// ---- BD Optimization scenarios ----
+const BD_SCENARIOS = [
+  {
+    id: "cannib",
+    name: "Каннибализация",
+    description:
+      "Ищем пересечения между запросами и оцениваем, какие запросы перетягивают трафик.",
+  },
+  {
+    id: "losses",
+    name: "Атрибуцированные потери",
+    description:
+      "Считаем потери, которые приписаны другим запросам, и долю этих потерь.",
+  },
+] as const;
+const bdScenarioName = (id?: string) =>
+  BD_SCENARIOS.find((s) => s.id === id)?.name ?? "Не выбран";
 
 export const Route = createFileRoute("/v4/run/$productId/$step")({
   head: ({ params }) => {
