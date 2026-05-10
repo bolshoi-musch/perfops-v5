@@ -1989,6 +1989,7 @@ function RunStep({
 function ResultStep({ product, projectId, steps: _steps }: { product: Product; projectId: string; steps: StepId[] }) {
   const search = Route.useSearch() as RunnerSearch;
   const isSemantics = product.id === "semantics-generator";
+  const isCrossMinus = product.id === "cross-minus";
   const scenario = search.scenario;
   // For excel results: saved=0 means local copy only; save=error means saving failed.
   const saved = search.saved !== 0;
