@@ -555,6 +555,8 @@ function SourceStep({
           </CardContent>
         </Card>
 
+        {isBd && <BdStatsSlot />}
+
         {product.supportsSecondSource && (
           <Card className="border border-dashed bg-card shadow-none">
             <CardContent className="p-5">
