@@ -1356,21 +1356,39 @@ function CheckStep({
       <div className="space-y-3 lg:col-span-2">
         <Card className="border bg-card shadow-none">
           <CardContent className="space-y-3 p-5">
-            <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
-              <CheckCircle2 className="h-4 w-4" />
-              Источник принят, структура соответствует ожиданиям.
-            </div>
-            <div className="flex items-start gap-2 rounded-md border bg-warning-soft px-3 py-2 text-sm">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
-              <div>
-                <p className="font-medium text-warning-foreground">
-                  В выгрузке есть 14 строк с пустой валютой
-                </p>
-                <p className="mt-0.5 text-xs text-warning-foreground/80">
-                  Можно продолжить — такие строки будут пропущены.
-                </p>
+            {state === "clean" && (
+              <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
+                <CheckCircle2 className="h-4 w-4" />
+                Источник принят, структура соответствует ожиданиям. Можно запускать.
               </div>
-            </div>
+            )}
+            {state === "warning" && (
+              <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
+                <div>
+                  <p className="font-medium text-warning-foreground">
+                    В выгрузке есть 14 строк с пустой валютой и 3 нераспознанные колонки
+                  </p>
+                  <p className="mt-0.5 text-xs text-warning-foreground/80">
+                    Можно продолжить — такие строки и колонки будут пропущены при анализе.
+                  </p>
+                </div>
+              </div>
+            )}
+            {state === "blocked" && (
+              <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-blocked-soft px-3 py-2 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="font-medium">
+                    Не хватает обязательных колонок: campaign_id, date
+                  </p>
+                  <p className="mt-0.5 text-xs">
+                    Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими
+                    колонками.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="rounded-md border bg-surface px-4 py-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
