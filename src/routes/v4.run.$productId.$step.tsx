@@ -1030,6 +1030,65 @@ function LibrarySourcePicker({ product }: { product: Product }) {
   );
 }
 
+// --------------------- BD Optimization: stats slot on Source step ---------------------
+
+function BdStatsSlot() {
+  const search = Route.useSearch() as RunnerSearch;
+  const navigate = useNavigate();
+  const params = Route.useParams();
+  const attached = search.stats === 1;
+  const setStats = (on: boolean) => {
+    const next: Record<string, unknown> = { ...search };
+    if (on) next.stats = 1;
+    else delete next.stats;
+    navigate({
+      to: "/v4/run/$productId/$step",
+      params: { productId: params.productId, step: "source" },
+      search: next,
+      replace: true,
+    });
+  };
+  return (
+    <Card className="border border-dashed bg-card shadow-none">
+      <CardContent className="p-5">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Дополнительный файл · Статистика поисковых запросов
+          </p>
+          <span className="text-[11px] text-muted-foreground">опционально</span>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Уточняет конверсии по запросам. Колонки: «Поисковый запрос», «Конверсии».
+          Форматы: .xlsx, .csv.
+        </p>
+        {attached ? (
+          <div className="flex items-center justify-between gap-3 rounded-md border bg-success-soft px-3 py-2.5 text-sm">
+            <div className="flex min-w-0 items-center gap-2">
+              <FileSpreadsheet className="h-4 w-4 shrink-0 text-success" />
+              <span className="truncate font-medium text-foreground">
+                query_stats.xlsx
+              </span>
+              <span className="text-xs text-muted-foreground">· 86 КБ · принят</span>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button size="sm" variant="ghost" onClick={() => setStats(false)}>
+                Удалить
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setStats(true)}>
+                Заменить
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setStats(true)}>
+            <Upload className="h-3.5 w-3.5" /> Добавить файл со статистикой
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 // --------------------- Combining ---------------------
 
