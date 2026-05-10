@@ -1814,7 +1814,7 @@ function CheckStep({
                   params={{ productId: product.id, step: "source" }}
                   search={navSearch}
                 >
-                  {state === "blocked" && isFileScenario
+                  {state === "blocked" && (isFileScenario || isCrossMinus)
                     ? "Заменить файл"
                     : "Изменить источник"}
                 </Link>
