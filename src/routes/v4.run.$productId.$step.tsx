@@ -1457,7 +1457,8 @@ function CheckStep({
           current="check"
           projectId={projectId}
           nextSlot={
-            next && (
+            next &&
+            (canRun ? (
               <Button asChild>
                 <Link
                   to="/v4/run/$productId/$step"
@@ -1466,7 +1467,11 @@ function CheckStep({
                   Запустить <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>
-            )
+            ) : (
+              <Button disabled title="Сначала исправьте блокирующие ошибки">
+                Запустить <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            ))
           }
         />
       </div>
