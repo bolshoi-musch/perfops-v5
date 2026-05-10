@@ -1839,7 +1839,16 @@ function RunStep({
 }) {
   const search = Route.useSearch() as RunnerSearch;
   const isSemantics = product.id === "semantics-generator";
+  const isCampaignAnalysis = product.id === "campaign-analysis";
   const navSearch: Record<string, unknown> = search.scenario ? { scenario: search.scenario } : {};
+  const headline = isCampaignAnalysis
+    ? "Анализ выполняется"
+    : `${product.name} — идёт обработка`;
+  const eta = isSemantics
+    ? "Подготовка Excel-файла · ~3–5 мин"
+    : isCampaignAnalysis
+      ? "Подготовка аналитического отчёта · ~2–3 мин"
+      : "Подготовка результата · ~2 мин";
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
@@ -1847,14 +1856,8 @@ function RunStep({
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <div>
-              <p className="text-sm font-medium text-foreground">
-                {product.name} — идёт обработка
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {isSemantics
-                  ? "Подготовка Excel-файла · ~3–5 мин"
-                  : "Подготовка результата · ~2 мин"}
-              </p>
+              <p className="text-sm font-medium text-foreground">{headline}</p>
+              <p className="text-xs text-muted-foreground">{eta}</p>
             </div>
           </div>
           <Progress value={62} className="h-1.5" />
@@ -1865,6 +1868,14 @@ function RunStep({
                 <li>· Собираем фразы</li>
                 <li className="text-foreground">· Дедуплицируем и фильтруем…</li>
                 <li>· Формируем Excel</li>
+                <li>· Сохраняем в Библиотеке</li>
+              </>
+            ) : isCampaignAnalysis ? (
+              <>
+                <li>· Читаем источник</li>
+                <li>· Считаем выбранные метрики</li>
+                <li className="text-foreground">· Готовим выводы и инсайты…</li>
+                <li>· Формируем аналитический отчёт</li>
                 <li>· Сохраняем в Библиотеке</li>
               </>
             ) : (
