@@ -1626,6 +1626,7 @@ function CheckStep({
   const state: CheckState = search.state ?? "clean";
   const scenario = search.scenario;
   const isSemantics = product.id === "semantics-generator";
+  const isCrossMinus = product.id === "cross-minus";
   const group = semanticsScenarioGroupOf(scenario);
   const isCluster = scenario === "cluster";
   const isFileScenario = isSemantics && (isCluster || scenario === "expand");
@@ -1640,6 +1641,11 @@ function CheckStep({
   const semBlocked = isCluster
     ? "Не удалось определить столбец с фразами. Укажите его в параметрах или замените файл."
     : "Файл не содержит ни одной валидной фразы. Замените источник.";
+  // Cross-minus-specific copy
+  const crossWarning =
+    "В 312 строках нет показов — они будут пропущены. Найдено 47 повторов ключевых фраз — объединим при подсчёте.";
+  const crossBlocked =
+    "Не найдена обязательная колонка «Показы». Без неё посчитать пересечения невозможно.";
   const reportWarning =
     "В выгрузке есть 14 строк с пустой валютой и 3 нераспознанные колонки";
   const reportBlocked = "Не хватает обязательных колонок: campaign_id, date";
@@ -1652,7 +1658,9 @@ function CheckStep({
         : scenario === "topic-list"
           ? "Тема списка: «спортивная обувь»"
           : "Тема: «весенняя коллекция спортивной обуви»"
-    : "campaign_export.xlsx";
+    : isCrossMinus
+      ? "keywords_export.xlsx"
+      : "campaign_export.xlsx";
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
