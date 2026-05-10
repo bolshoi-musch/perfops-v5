@@ -2128,7 +2128,7 @@ function CheckStep({
                 <li>· Куда сохранится: Библиотека</li>
                 <li>
                   · Ожидаемое время обработки:{" "}
-                  {isSemantics ? "~3–5 мин" : isCrossMinus ? "~1–3 мин" : "~2 мин"}
+                  {isSemantics ? "~3–5 мин" : isCrossMinus ? "~1–3 мин" : isBd ? "~1–3 мин" : "~2 мин"}
                 </li>
               </ul>
             </div>
@@ -2140,11 +2140,22 @@ function CheckStep({
                   params={{ productId: product.id, step: "source" }}
                   search={navSearch}
                 >
-                  {state === "blocked" && (isFileScenario || isCrossMinus)
+                  {state === "blocked" && (isFileScenario || isCrossMinus || (isBd && !bdMismatch))
                     ? "Заменить файл"
                     : "Изменить источник"}
                 </Link>
               </Button>
+              {isBd && bdMismatch && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link
+                    to="/v4/run/$productId/$step"
+                    params={{ productId: product.id, step: "params" }}
+                    search={navSearch}
+                  >
+                    Изменить сценарий
+                  </Link>
+                </Button>
+              )}
               {product.steps.includes("params") && (
                 <Button variant="ghost" size="sm" asChild>
                   <Link
