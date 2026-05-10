@@ -412,9 +412,18 @@ function SourceStep({
   hasSecondSource: boolean;
 }) {
   const navigate = useNavigate();
-  const [activeKind, setActiveKind] = useState<SourceKind>(product.allowedSources[0]);
-  const [secondKind, setSecondKind] = useState<SourceKind>(product.allowedSources[0]);
-  const [hasFile, setHasFile] = useState(true);
+  const search = Route.useSearch() as RunnerSearch;
+  const isSemantics = product.id === "semantics-generator";
+  const scenario = search.scenario;
+  // For semantics, the set of available source kinds depends on the scenario.
+  const effectiveSources: SourceKind[] =
+    isSemantics && scenario && SEMANTICS_SOURCE_BY_SCENARIO[scenario]
+      ? SEMANTICS_SOURCE_BY_SCENARIO[scenario]
+      : product.allowedSources;
+  const [activeKind, setActiveKind] = useState<SourceKind>(effectiveSources[0]);
+  const [secondKind, setSecondKind] = useState<SourceKind>(effectiveSources[0]);
+  // For cluster scenario, default to no file (so user sees the empty upload).
+  const [hasFile, setHasFile] = useState(!(isSemantics && scenario === "cluster"));
   const [hasSecondFile, setHasSecondFile] = useState(false);
 
   const enableSecondSource = () => {
