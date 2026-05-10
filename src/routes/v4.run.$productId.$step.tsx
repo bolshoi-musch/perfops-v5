@@ -2053,6 +2053,12 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
               Формат: {resultFormatLabel[product.resultFormat]}
               {isSemantics && scenario && ` · Сценарий: ${semanticsScenarioName(scenario)}`}
             </p>
+            {isCrossMinus && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Excel-файл содержит лист для загрузки в кампании и лист со списками
+                минус-фраз.
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2">
