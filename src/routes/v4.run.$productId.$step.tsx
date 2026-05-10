@@ -476,6 +476,7 @@ function SourceStep({
     });
   };
 
+  const isBd = product.id === "bd-optimization";
   const sourceHelp: string[] = isSemantics
     ? [
         scenario === "cluster"
@@ -488,16 +489,23 @@ function SourceStep({
           ? ["Текстовый столбец определим автоматически — указать его можно в параметрах"]
           : []),
       ]
-    : [
-        `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
-        ...(product.supportedConnections.length > 0
-          ? ["Можно выбрать подключённый аккаунт"]
-          : []),
-        "Можно выбрать источник из Библиотеки",
-        ...(product.supportsSecondSource
-          ? ["Второй источник равноправен первому: те же варианты"]
-          : []),
-      ];
+    : isBd
+      ? [
+          "Нужна выгрузка с поисковыми запросами или фразами, расходами, кликами и (по возможности) конверсиями",
+          "Поддерживаются: .xlsx, .csv · до 100 МБ",
+          "Можно выбрать подключённый аккаунт или источник из Библиотеки",
+          "Дополнительный файл со статистикой запросов уточняет конверсии",
+        ]
+      : [
+          `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
+          ...(product.supportedConnections.length > 0
+            ? ["Можно выбрать подключённый аккаунт"]
+            : []),
+          "Можно выбрать источник из Библиотеки",
+          ...(product.supportsSecondSource
+            ? ["Второй источник равноправен первому: те же варианты"]
+            : []),
+        ];
 
   const navSearch: Record<string, unknown> = {};
   if (hasSecondSource) navSearch.second = 1;
