@@ -1216,7 +1216,210 @@ function ParamRow({
   );
 }
 
-// --------------------- Metrics & focus (campaign-analysis) ---------------------
+// --------------------- Semantics params ---------------------
+
+function SemanticsParamsStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
+  const search = Route.useSearch() as RunnerSearch;
+  const scenario = search.scenario;
+  const group = semanticsScenarioGroupOf(scenario);
+  const isCluster = scenario === "cluster";
+  const showBrands = group === "collection";
+  const showExclusionsFile = group === "collection" || scenario === "topic-list";
+
+  const [phrases, setPhrases] = useState("200");
+  const [maxLen, setMaxLen] = useState("3");
+  const [brands, setBrands] = useState<"include" | "exclude">("exclude");
+  const [exclFile, setExclFile] = useState<string | null>(null);
+  const [phrasesError, setPhrasesError] = useState<string | null>(null);
+
+  const onPhrasesBlur = () => {
+    const n = Number(phrases);
+    if (!Number.isFinite(n) || n < 50 || n > 1000) {
+      setPhrasesError("Количество фраз должно быть от 50 до 1000.");
+    } else {
+      setPhrasesError(null);
+    }
+  };
+
+  const navSearch: Record<string, unknown> = scenario ? { scenario } : {};
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <Card className="border bg-card shadow-none lg:col-span-2">
+        <CardContent className="space-y-4 p-5">
+          {/* Scenario reminder */}
+          <div className="rounded-md border bg-surface px-3 py-2 text-xs">
+            <span className="text-muted-foreground">Сценарий: </span>
+            <span className="font-medium text-foreground">
+              {semanticsScenarioName(scenario)}
+            </span>
+            {group && (
+              <span className="ml-1.5 text-muted-foreground">
+                · {semanticsScenarioGroupLabel[group]}
+              </span>
+            )}
+          </div>
+
+          {isCluster ? (
+            <ParamRow
+              label="Столбец с фразами"
+              hint="Если оставить пусто — определим автоматически"
+            >
+              <Input placeholder="phrase" className="h-9 w-48 text-sm" />
+            </ParamRow>
+          ) : (
+            <>
+              <ParamRow label="Количество фраз" hint="от 50 до 1000">
+                <div className="space-y-1">
+                  <select
+                    value={phrases}
+                    onChange={(e) => {
+                      setPhrases(e.target.value);
+                      setPhrasesError(null);
+                    }}
+                    onBlur={onPhrasesBlur}
+                    className="h-9 w-32 rounded-md border bg-card px-2 text-sm text-foreground"
+                  >
+                    {["100", "200", "300", "500", "1000"].map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                  {phrasesError && (
+                    <p className="text-[11px] text-destructive">{phrasesError}</p>
+                  )}
+                </div>
+              </ParamRow>
+
+              <ParamRow label="Максимальная длина фразы" hint="в словах, от 1 до 5">
+                <select
+                  value={maxLen}
+                  onChange={(e) => setMaxLen(e.target.value)}
+                  className="h-9 w-24 rounded-md border bg-card px-2 text-sm text-foreground"
+                >
+                  {["1", "2", "3", "4", "5"].map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </ParamRow>
+
+              {showBrands && (
+                <ParamRow label="Бренды">
+                  <div className="flex items-center gap-4 text-sm">
+                    <label className="inline-flex items-center gap-1.5">
+                      <input
+                        type="radio"
+                        name="brands"
+                        checked={brands === "include"}
+                        onChange={() => setBrands("include")}
+                        className="h-3.5 w-3.5 accent-primary"
+                      />
+                      Включать
+                    </label>
+                    <label className="inline-flex items-center gap-1.5">
+                      <input
+                        type="radio"
+                        name="brands"
+                        checked={brands === "exclude"}
+                        onChange={() => setBrands("exclude")}
+                        className="h-3.5 w-3.5 accent-primary"
+                      />
+                      Исключить
+                    </label>
+                  </div>
+                </ParamRow>
+              )}
+
+              <ParamRow
+                label="Исключения"
+                hint="через запятую, точку с запятой или с новой строки"
+              >
+                <Textarea
+                  placeholder="бесплатно, скачать, отзывы…"
+                  className="min-h-[72px] text-sm"
+                />
+              </ParamRow>
+
+              {showExclusionsFile && (
+                <ParamRow label="Файл с исключениями" hint=".txt, .csv или .xlsx">
+                  {exclFile ? (
+                    <div className="inline-flex items-center gap-2 rounded-md border bg-success-soft px-2.5 py-1.5 text-xs">
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-success" />
+                      <span className="font-medium text-foreground">{exclFile}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-1.5"
+                        onClick={() => setExclFile("exclusions_v2.txt")}
+                      >
+                        Заменить
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-1.5 text-muted-foreground"
+                        onClick={() => setExclFile(null)}
+                      >
+                        Удалить
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setExclFile("exclusions.txt")}
+                    >
+                      <Upload className="h-3.5 w-3.5" /> Загрузить файл
+                    </Button>
+                  )}
+                </ParamRow>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+      <HelpCard
+        title="Подсказки"
+        items={
+          isCluster
+            ? [
+                "Столбец с фразами обычно определяется автоматически",
+                "Других параметров для кластеризации не нужно",
+              ]
+            : [
+                "Количество фраз — между 50 и 1000",
+                "Длина — сколько слов максимум должно быть в одной фразе",
+                "Исключения отфильтруют ненужные слова из результата",
+                "Изменение параметров не сбрасывает источник",
+              ]
+        }
+      />
+      <div className="lg:col-span-3">
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="params"
+          projectId={projectId}
+          search={navSearch}
+          nextDisabled={!!phrasesError}
+        />
+      </div>
+    </div>
+  );
+}
+
+
 
 type ClarifyChoice = "volume" | "rate" | "skip";
 
