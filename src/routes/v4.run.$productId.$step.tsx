@@ -69,23 +69,57 @@ const stepSchema = z.enum([
 ]);
 
 // Search params for the runner.
-//   second   — second source active (dashboard-builder dynamic "Combining" step)
-//   clarify  — show inline "unrecognized metrics" block on the metrics step
-//   state    — drives the diagnostic state of the check step
+//   second    — second source active (dashboard-builder dynamic "Combining" step)
+//   clarify   — show inline "unrecognized metrics" block on the metrics step
+//   state     — drives the diagnostic state of the check step
 //   dashboard — adds optional "Open dashboard" CTA on analytics-report result
+//   scenario  — selected semantics scenario id (drives source/params)
+//   saved     — 1 (default) — result saved to Library; 0 — local copy only
+//   save      — "error" — saving result to Library failed
 type CheckState = "clean" | "warning" | "blocked";
+type SaveState = "ok" | "error";
 type RunnerSearch = {
   second?: number;
   clarify?: number;
   state?: CheckState;
   dashboard?: number;
+  scenario?: string;
+  saved?: number;
+  save?: SaveState;
 };
 const searchSchema = z.object({
   second: z.coerce.number().optional(),
   clarify: z.coerce.number().optional(),
   state: z.enum(["clean", "warning", "blocked"]).optional(),
   dashboard: z.coerce.number().optional(),
+  scenario: z.string().optional(),
+  saved: z.coerce.number().optional(),
+  save: z.enum(["ok", "error"]).optional(),
 });
+
+// ---- Semantics scenarios: per-scenario source/params config ----
+const SEMANTICS_SOURCE_BY_SCENARIO: Record<string, SourceKind[]> = {
+  conservative: ["topic", "url", "upload", "library"],
+  balanced: ["topic", "url", "upload", "library"],
+  broad: ["topic", "url", "upload", "library"],
+  "topic-list": ["topic", "upload", "library"],
+  expand: ["topic", "upload", "library"],
+  cluster: ["upload", "library"],
+};
+const semanticsTopicLabel = (scenario?: string) =>
+  scenario === "expand"
+    ? "Исходный список запросов"
+    : scenario === "topic-list"
+      ? "Тема списка"
+      : "Тема или направление";
+const semanticsTopicPlaceholder = (scenario?: string) =>
+  scenario === "expand"
+    ? "Например: александр пушкин\nстихи пушкина\nпоэт пушкин"
+    : "Например: запуск весенней коллекции спортивной обуви";
+const semanticsScenarioName = (id?: string) =>
+  semanticsScenarios.find((s) => s.id === id)?.name ?? "Не выбран";
+const semanticsScenarioGroupOf = (id?: string) =>
+  semanticsScenarios.find((s) => s.id === id)?.group;
 
 const PROCESS_TITLES: Record<string, string> = {
   "dashboard-builder": "Подготовка дашборда",
@@ -280,12 +314,22 @@ function ScenarioStep({
   projectId: string;
   steps: StepId[];
 }) {
-  const [scenario, setScenario] = useState<string>("balanced");
+  const search = Route.useSearch() as RunnerSearch;
+  const navigate = useNavigate();
+  const scenario = search.scenario;
   const groups: SemanticsScenarioGroup[] = ["collection", "research", "processing"];
+  const setScenario = (id: string) => {
+    navigate({
+      to: "/v4/run/$productId/$step",
+      params: { productId: product.id, step: "scenario" },
+      search: { scenario: id },
+      replace: true,
+    });
+  };
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
-        <CardContent className="space-y-4 p-5">
+        <CardContent className="space-y-5 p-5">
           {groups.map((g) => (
             <div key={g}>
               <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
@@ -316,6 +360,12 @@ function ScenarioStep({
               </div>
             </div>
           ))}
+          {!scenario && (
+            <p className="rounded-md border border-dashed bg-surface px-3 py-2 text-xs text-muted-foreground">
+              Выберите сценарий, чтобы продолжить. Дальнейшие шаги — источник и параметры —
+              зависят от сценария.
+            </p>
+          )}
         </CardContent>
       </Card>
       <HelpCard
@@ -332,6 +382,8 @@ function ScenarioStep({
           steps={steps}
           current="scenario"
           projectId={projectId}
+          search={scenario ? { scenario } : {}}
+          nextDisabled={!scenario}
         />
       </div>
     </div>
@@ -360,9 +412,18 @@ function SourceStep({
   hasSecondSource: boolean;
 }) {
   const navigate = useNavigate();
-  const [activeKind, setActiveKind] = useState<SourceKind>(product.allowedSources[0]);
-  const [secondKind, setSecondKind] = useState<SourceKind>(product.allowedSources[0]);
-  const [hasFile, setHasFile] = useState(true);
+  const search = Route.useSearch() as RunnerSearch;
+  const isSemantics = product.id === "semantics-generator";
+  const scenario = search.scenario;
+  // For semantics, the set of available source kinds depends on the scenario.
+  const effectiveSources: SourceKind[] =
+    isSemantics && scenario && SEMANTICS_SOURCE_BY_SCENARIO[scenario]
+      ? SEMANTICS_SOURCE_BY_SCENARIO[scenario]
+      : product.allowedSources;
+  const [activeKind, setActiveKind] = useState<SourceKind>(effectiveSources[0]);
+  const [secondKind, setSecondKind] = useState<SourceKind>(effectiveSources[0]);
+  // For cluster scenario, default to no file (so user sees the empty upload).
+  const [hasFile, setHasFile] = useState(!(isSemantics && scenario === "cluster"));
   const [hasSecondFile, setHasSecondFile] = useState(false);
 
   const enableSecondSource = () => {
@@ -388,16 +449,32 @@ function SourceStep({
     });
   };
 
-  const sourceHelp: string[] = [
-    `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
-    ...(product.supportedConnections.length > 0
-      ? ["Можно выбрать подключённый аккаунт"]
-      : []),
-    "Можно выбрать источник из Библиотеки",
-    ...(product.supportsSecondSource
-      ? ["Второй источник равноправен первому: те же варианты"]
-      : []),
-  ];
+  const sourceHelp: string[] = isSemantics
+    ? [
+        scenario === "cluster"
+          ? "Загрузите файл с готовым списком фраз: TXT, CSV или XLSX"
+          : scenario === "expand"
+            ? "Можно вставить seed-список или загрузить файл с фразами"
+            : "Можно указать тему, ссылку или загрузить файл",
+        "Можно выбрать источник из Библиотеки",
+        ...(scenario === "cluster"
+          ? ["Текстовый столбец определим автоматически — указать его можно в параметрах"]
+          : []),
+      ]
+    : [
+        `Поддерживаются: ${product.acceptedFileTypes.join(", ")}`,
+        ...(product.supportedConnections.length > 0
+          ? ["Можно выбрать подключённый аккаунт"]
+          : []),
+        "Можно выбрать источник из Библиотеки",
+        ...(product.supportsSecondSource
+          ? ["Второй источник равноправен первому: те же варианты"]
+          : []),
+      ];
+
+  const navSearch: Record<string, unknown> = {};
+  if (hasSecondSource) navSearch.second = 1;
+  if (scenario) navSearch.scenario = scenario;
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -408,7 +485,7 @@ function SourceStep({
               {product.supportsSecondSource ? "Источник 1 · тип" : "Тип источника"}
             </p>
             <div className="flex flex-wrap gap-2">
-              {product.allowedSources.map((k) => {
+              {effectiveSources.map((k) => {
                 const Icon = sourceIcon[k];
                 const active = activeKind === k;
                 return (
@@ -437,6 +514,7 @@ function SourceStep({
                 hasFile={hasFile}
                 onClearFile={() => setHasFile(false)}
                 onAttachFile={() => setHasFile(true)}
+                scenario={scenario}
               />
             </div>
           </CardContent>
@@ -519,7 +597,7 @@ function SourceStep({
           steps={steps}
           current="source"
           projectId={projectId}
-          search={hasSecondSource ? { second: 1 } : {}}
+          search={navSearch}
         />
       </div>
     </div>
@@ -532,21 +610,38 @@ function SourcePanel({
   hasFile,
   onAttachFile,
   onClearFile,
+  scenario,
 }: {
   kind: SourceKind;
   product: Product;
   hasFile: boolean;
   onAttachFile: () => void;
   onClearFile: () => void;
+  scenario?: string;
 }) {
+  const isSemantics = product.id === "semantics-generator";
+  const isCluster = isSemantics && scenario === "cluster";
+
   if (kind === "upload") {
     if (hasFile) {
+      const fileName = isSemantics
+        ? isCluster
+          ? "phrases_to_cluster.csv"
+          : scenario === "expand"
+            ? "seed_keywords.txt"
+            : "topic_brief.txt"
+        : "campaign_export.xlsx";
+      const fileMeta = isSemantics
+        ? isCluster
+          ? "CSV · 18 КБ · 4 320 фраз · принят"
+          : "TXT · 4 КБ · принят"
+        : "412 КБ · принят";
       return (
         <div className="flex items-center justify-between gap-3 rounded-md border bg-success-soft px-3 py-2.5 text-sm">
           <div className="flex min-w-0 items-center gap-2">
             <FileSpreadsheet className="h-4 w-4 shrink-0 text-success" />
-            <span className="truncate font-medium text-foreground">campaign_export.xlsx</span>
-            <span className="text-xs text-muted-foreground">· 412 КБ · принят</span>
+            <span className="truncate font-medium text-foreground">{fileName}</span>
+            <span className="text-xs text-muted-foreground">· {fileMeta}</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Button size="sm" variant="ghost" onClick={onClearFile}>
@@ -559,12 +654,18 @@ function SourcePanel({
         </div>
       );
     }
+    const accepted = isCluster
+      ? ".txt, .csv, .xlsx"
+      : product.acceptedFileTypes.join(", ");
+    const sizeHint = isSemantics ? "до 10 МБ" : "до 25 МБ";
     return (
       <div className="rounded-md border border-dashed bg-surface px-4 py-8 text-center">
         <Upload className="mx-auto h-7 w-7 text-muted-foreground" />
-        <p className="mt-2 text-sm font-medium text-foreground">Перетащите файл сюда</p>
+        <p className="mt-2 text-sm font-medium text-foreground">
+          {isCluster ? "Загрузите файл с фразами" : "Перетащите файл сюда"}
+        </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {product.acceptedFileTypes.join(", ")} · до 25 МБ
+          {accepted} · {sizeHint}
         </p>
         <Button size="sm" variant="outline" className="mt-3" onClick={onAttachFile}>
           Выбрать файл
@@ -585,12 +686,19 @@ function SourcePanel({
     return (
       <div className="space-y-1.5">
         <Label htmlFor="topic" className="text-xs font-medium">
-          Тема или направление
+          {isSemantics ? semanticsTopicLabel(scenario) : "Тема или направление"}
         </Label>
         <Textarea
           id="topic"
-          placeholder="Например: запуск весенней коллекции спортивной обуви"
-          className="min-h-[88px] text-sm"
+          placeholder={
+            isSemantics
+              ? semanticsTopicPlaceholder(scenario)
+              : "Например: запуск весенней коллекции спортивной обуви"
+          }
+          className={cn(
+            "text-sm",
+            isSemantics && scenario === "expand" ? "min-h-[120px]" : "min-h-[88px]",
+          )}
         />
       </div>
     );
@@ -1058,47 +1166,7 @@ function ParamsStep({
   steps: StepId[];
 }) {
   if (product.id === "semantics-generator") {
-    return (
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="border bg-card shadow-none lg:col-span-2">
-          <CardContent className="space-y-4 p-5">
-            <ParamRow label="Количество фраз" hint="до 20 000">
-              <Input defaultValue="5000" className="h-9 w-32 text-sm" />
-            </ParamRow>
-            <ParamRow label="Максимальная длина фразы" hint="в словах">
-              <Input defaultValue="6" className="h-9 w-32 text-sm" />
-            </ParamRow>
-            <ParamRow label="Минус-слова" hint="через запятую или с новой строки">
-              <Textarea
-                placeholder="бесплатно, скачать, отзывы…"
-                className="min-h-[72px] text-sm"
-              />
-            </ParamRow>
-            <ParamRow label="Файл с минус-словами" hint=".txt или .xlsx">
-              <Button size="sm" variant="outline">
-                <Upload className="h-3.5 w-3.5" /> Загрузить файл
-              </Button>
-            </ParamRow>
-          </CardContent>
-        </Card>
-        <HelpCard
-          title="Подсказки"
-          items={[
-            "Если не уверены в количестве — оставьте 5 000",
-            "Минус-слова можно загрузить файлом из Библиотеки",
-            "Изменение параметров не сбрасывает источник",
-          ]}
-        />
-        <div className="lg:col-span-3">
-          <FlowActionBar
-            product={product}
-            steps={steps}
-            current="params"
-            projectId={projectId}
-          />
-        </div>
-      </div>
-    );
+    return <SemanticsParamsStep product={product} projectId={projectId} steps={steps} />;
   }
 
   return (
@@ -1148,7 +1216,210 @@ function ParamRow({
   );
 }
 
-// --------------------- Metrics & focus (campaign-analysis) ---------------------
+// --------------------- Semantics params ---------------------
+
+function SemanticsParamsStep({
+  product,
+  projectId,
+  steps,
+}: {
+  product: Product;
+  projectId: string;
+  steps: StepId[];
+}) {
+  const search = Route.useSearch() as RunnerSearch;
+  const scenario = search.scenario;
+  const group = semanticsScenarioGroupOf(scenario);
+  const isCluster = scenario === "cluster";
+  const showBrands = group === "collection";
+  const showExclusionsFile = group === "collection" || scenario === "topic-list";
+
+  const [phrases, setPhrases] = useState("200");
+  const [maxLen, setMaxLen] = useState("3");
+  const [brands, setBrands] = useState<"include" | "exclude">("exclude");
+  const [exclFile, setExclFile] = useState<string | null>(null);
+  const [phrasesError, setPhrasesError] = useState<string | null>(null);
+
+  const onPhrasesBlur = () => {
+    const n = Number(phrases);
+    if (!Number.isFinite(n) || n < 50 || n > 1000) {
+      setPhrasesError("Количество фраз должно быть от 50 до 1000.");
+    } else {
+      setPhrasesError(null);
+    }
+  };
+
+  const navSearch: Record<string, unknown> = scenario ? { scenario } : {};
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <Card className="border bg-card shadow-none lg:col-span-2">
+        <CardContent className="space-y-4 p-5">
+          {/* Scenario reminder */}
+          <div className="rounded-md border bg-surface px-3 py-2 text-xs">
+            <span className="text-muted-foreground">Сценарий: </span>
+            <span className="font-medium text-foreground">
+              {semanticsScenarioName(scenario)}
+            </span>
+            {group && (
+              <span className="ml-1.5 text-muted-foreground">
+                · {semanticsScenarioGroupLabel[group]}
+              </span>
+            )}
+          </div>
+
+          {isCluster ? (
+            <ParamRow
+              label="Столбец с фразами"
+              hint="Если оставить пусто — определим автоматически"
+            >
+              <Input placeholder="phrase" className="h-9 w-48 text-sm" />
+            </ParamRow>
+          ) : (
+            <>
+              <ParamRow label="Количество фраз" hint="от 50 до 1000">
+                <div className="space-y-1">
+                  <select
+                    value={phrases}
+                    onChange={(e) => {
+                      setPhrases(e.target.value);
+                      setPhrasesError(null);
+                    }}
+                    onBlur={onPhrasesBlur}
+                    className="h-9 w-32 rounded-md border bg-card px-2 text-sm text-foreground"
+                  >
+                    {["100", "200", "300", "500", "1000"].map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                  {phrasesError && (
+                    <p className="text-[11px] text-destructive">{phrasesError}</p>
+                  )}
+                </div>
+              </ParamRow>
+
+              <ParamRow label="Максимальная длина фразы" hint="в словах, от 1 до 5">
+                <select
+                  value={maxLen}
+                  onChange={(e) => setMaxLen(e.target.value)}
+                  className="h-9 w-24 rounded-md border bg-card px-2 text-sm text-foreground"
+                >
+                  {["1", "2", "3", "4", "5"].map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </ParamRow>
+
+              {showBrands && (
+                <ParamRow label="Бренды">
+                  <div className="flex items-center gap-4 text-sm">
+                    <label className="inline-flex items-center gap-1.5">
+                      <input
+                        type="radio"
+                        name="brands"
+                        checked={brands === "include"}
+                        onChange={() => setBrands("include")}
+                        className="h-3.5 w-3.5 accent-primary"
+                      />
+                      Включать
+                    </label>
+                    <label className="inline-flex items-center gap-1.5">
+                      <input
+                        type="radio"
+                        name="brands"
+                        checked={brands === "exclude"}
+                        onChange={() => setBrands("exclude")}
+                        className="h-3.5 w-3.5 accent-primary"
+                      />
+                      Исключить
+                    </label>
+                  </div>
+                </ParamRow>
+              )}
+
+              <ParamRow
+                label="Исключения"
+                hint="через запятую, точку с запятой или с новой строки"
+              >
+                <Textarea
+                  placeholder="бесплатно, скачать, отзывы…"
+                  className="min-h-[72px] text-sm"
+                />
+              </ParamRow>
+
+              {showExclusionsFile && (
+                <ParamRow label="Файл с исключениями" hint=".txt, .csv или .xlsx">
+                  {exclFile ? (
+                    <div className="inline-flex items-center gap-2 rounded-md border bg-success-soft px-2.5 py-1.5 text-xs">
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-success" />
+                      <span className="font-medium text-foreground">{exclFile}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-1.5"
+                        onClick={() => setExclFile("exclusions_v2.txt")}
+                      >
+                        Заменить
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-1.5 text-muted-foreground"
+                        onClick={() => setExclFile(null)}
+                      >
+                        Удалить
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setExclFile("exclusions.txt")}
+                    >
+                      <Upload className="h-3.5 w-3.5" /> Загрузить файл
+                    </Button>
+                  )}
+                </ParamRow>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+      <HelpCard
+        title="Подсказки"
+        items={
+          isCluster
+            ? [
+                "Столбец с фразами обычно определяется автоматически",
+                "Других параметров для кластеризации не нужно",
+              ]
+            : [
+                "Количество фраз — между 50 и 1000",
+                "Длина — сколько слов максимум должно быть в одной фразе",
+                "Исключения отфильтруют ненужные слова из результата",
+                "Изменение параметров не сбрасывает источник",
+              ]
+        }
+      />
+      <div className="lg:col-span-3">
+        <FlowActionBar
+          product={product}
+          steps={steps}
+          current="params"
+          projectId={projectId}
+          search={navSearch}
+          nextDisabled={!!phrasesError}
+        />
+      </div>
+    </div>
+  );
+}
+
+
 
 type ClarifyChoice = "volume" | "rate" | "skip";
 
