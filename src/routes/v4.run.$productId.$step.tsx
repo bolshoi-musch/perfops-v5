@@ -1876,13 +1876,26 @@ function CheckStep({
   const scenario = search.scenario;
   const isSemantics = product.id === "semantics-generator";
   const isCrossMinus = product.id === "cross-minus";
+  const isBd = product.id === "bd-optimization";
+  const bdScenario =
+    isBd && scenario && BD_SCENARIOS.some((s) => s.id === scenario)
+      ? scenario
+      : isBd
+        ? "cannib"
+        : undefined;
+  const bdMismatch = isBd && state === "blocked" && search.mismatch === 1;
+  const hasStats = isBd && search.stats === 1;
+  const isMultiSheet = isBd && search.multisheet === 1;
   const group = semanticsScenarioGroupOf(scenario);
   const isCluster = scenario === "cluster";
   const isFileScenario = isSemantics && (isCluster || scenario === "expand");
   const idx = steps.indexOf("check");
   const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : undefined;
   const canRun = state !== "blocked";
-  const navSearch: Record<string, unknown> = scenario ? { scenario } : {};
+  const navSearch: Record<string, unknown> = {};
+  if (scenario) navSearch.scenario = scenario;
+  if (isBd && hasStats) navSearch.stats = 1;
+  if (isBd && isMultiSheet) navSearch.multisheet = 1;
 
   // Semantics-specific copy
   const semWarning =
@@ -1895,6 +1908,16 @@ function CheckStep({
     "В 312 строках нет показов — они будут пропущены. Найдено 47 повторов ключевых фраз — объединим при подсчёте.";
   const crossBlocked =
     "Не найдена обязательная колонка «Показы». Без неё посчитать пересечения невозможно.";
+  // BD Optimization-specific copy
+  const bdWarning =
+    bdScenario === "losses"
+      ? "В 184 строках нет конверсий — они не повлияют на расчёт потерь. Найдены 26 дублей запросов — объединим."
+      : "В 412 строках нет расхода — они будут пропущены. Часть запросов короче 2 слов — биграммы и триграммы по ним не построим.";
+  const bdBlocked = bdMismatch
+    ? bdScenario === "losses"
+      ? "Структура файла не подходит для сценария «Атрибуцированные потери»: не найдены колонки с потерями и долей потерь."
+      : "Структура файла не подходит для сценария «Каннибализация»: не найдены колонки с пересечениями и метриками каннибализации."
+    : "Не найдена колонка с поисковыми запросами / фразами. Без неё разобрать слова, биграммы и триграммы невозможно.";
   const reportWarning =
     "В выгрузке есть 14 строк с пустой валютой и 3 нераспознанные колонки";
   const reportBlocked = "Не хватает обязательных колонок: campaign_id, date";
@@ -1909,7 +1932,9 @@ function CheckStep({
           : "Тема: «весенняя коллекция спортивной обуви»"
     : isCrossMinus
       ? "keywords_export.xlsx"
-      : "campaign_export.xlsx";
+      : isBd
+        ? "search_queries_export.xlsx"
+        : "campaign_export.xlsx";
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
