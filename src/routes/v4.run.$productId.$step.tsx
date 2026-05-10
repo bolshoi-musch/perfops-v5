@@ -1919,6 +1919,11 @@ function RunStep({
 
 function ResultStep({ product, projectId, steps: _steps }: { product: Product; projectId: string; steps: StepId[] }) {
   const search = Route.useSearch() as RunnerSearch;
+  const isSemantics = product.id === "semantics-generator";
+  const scenario = search.scenario;
+  // For excel results: saved=0 means local copy only; save=error means saving failed.
+  const saved = search.saved !== 0;
+  const saveError = search.save === "error";
   const PrimaryIcon =
     product.resultFormat === "excel"
       ? Download
@@ -1938,10 +1943,34 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
         <CardContent className="space-y-4 p-6">
-          <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
-            <CheckCircle2 className="h-4 w-4" />
-            Результат сохранён в Библиотеке.
-          </div>
+          {saveError ? (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-blocked-soft px-3 py-2 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="font-medium">Не удалось сохранить результат в Библиотеку</p>
+                <p className="mt-0.5 text-xs">
+                  Файл готов и его можно скачать. Сохранение в Библиотеку можно повторить.
+                </p>
+              </div>
+            </div>
+          ) : saved ? (
+            <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
+              <CheckCircle2 className="h-4 w-4" />
+              Результат сохранён в Библиотеке.
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
+              <div>
+                <p className="font-medium text-warning-foreground">
+                  Файл готов, но не сохранён в Библиотеку
+                </p>
+                <p className="mt-0.5 text-xs text-warning-foreground/80">
+                  Скачайте его сейчас или сохраните в Библиотеку, чтобы вернуться позже.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="rounded-md border bg-surface px-4 py-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -1952,6 +1981,7 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               Формат: {resultFormatLabel[product.resultFormat]}
+              {isSemantics && scenario && ` · Сценарий: ${semanticsScenarioName(scenario)}`}
             </p>
           </div>
 
@@ -1962,6 +1992,16 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
             {showDashboardCta && (
               <Button variant="outline">
                 <ExternalLink className="h-3.5 w-3.5" /> Открыть дашборд
+              </Button>
+            )}
+            {product.resultFormat === "excel" && saveError && (
+              <Button variant="outline">
+                <ArrowRight className="h-3.5 w-3.5" /> Повторить сохранение
+              </Button>
+            )}
+            {product.resultFormat === "excel" && !saved && !saveError && (
+              <Button variant="outline">
+                <Database className="h-3.5 w-3.5" /> Сохранить в Библиотеку
               </Button>
             )}
             <Button variant="outline" asChild>
@@ -1980,7 +2020,9 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             Где сохранён
           </p>
-          <p className="mt-1 text-sm text-foreground">Библиотека</p>
+          <p className="mt-1 text-sm text-foreground">
+            {saveError ? "Сохранение не удалось" : saved ? "Библиотека" : "Локально (не сохранён)"}
+          </p>
           <p className="mt-3 text-xs text-muted-foreground">
             Все источники и результаты проекта собраны в Библиотеке.
           </p>
