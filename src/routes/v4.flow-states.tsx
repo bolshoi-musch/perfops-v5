@@ -545,6 +545,139 @@ const campaignAnalysisExamples: CampaignAnalysisExample[] = [
   },
 ];
 
+// --------------------- Example: Сбор и обработка семантики ---------------------
+
+interface SemanticsExample {
+  group: string;
+  tone: Tone;
+  title: string;
+  example: ReactNode;
+}
+
+const semanticsExamples: SemanticsExample[] = [
+  {
+    group: "Сценарий не выбран",
+    tone: "neutral",
+    title: "Выберите сценарий работы",
+    example: (
+      <div className="rounded-md border border-dashed bg-surface px-4 py-6 text-center text-xs text-muted-foreground">
+        Сбор · Исследование · Обработка — выберите, как платформа должна работать с фразами.
+      </div>
+    ),
+  },
+  {
+    group: "Источник для кластеризации",
+    tone: "neutral",
+    title: "Загрузите файл с фразами",
+    example: (
+      <div className="rounded-md border border-dashed bg-surface px-4 py-6 text-center">
+        <FileSpreadsheet className="mx-auto h-6 w-6 text-muted-foreground" />
+        <p className="mt-2 text-sm font-medium text-foreground">phrases.csv</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          TXT, CSV или XLSX, до 10 МБ.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Параметры — ошибка",
+    tone: "blocked",
+    title: "Количество фраз вне допустимого диапазона",
+    example: (
+      <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm text-destructive">
+        <p className="flex items-center gap-2 font-medium">
+          <CircleSlash className="h-4 w-4" /> Должно быть от 50 до 1000
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (clean)",
+    tone: "success",
+    title: "Источник принят",
+    example: (
+      <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
+        <CheckCircle2 className="h-4 w-4" />
+        Всё готово к запуску.
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (warning)",
+    tone: "warning",
+    title: "Часть фраз будет пропущена",
+    example: (
+      <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-warning-foreground">
+          <AlertTriangle className="h-4 w-4" /> 124 пустых строки и 38 повторов
+        </p>
+        <p className="mt-1 text-xs text-warning-foreground/80">
+          Можно продолжить — будут пропущены при обработке.
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Проверка (blocked)",
+    tone: "blocked",
+    title: "Не удалось определить столбец с фразами",
+    example: (
+      <div className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2 text-sm text-destructive">
+        <p className="flex items-center gap-2 font-medium">
+          <CircleSlash className="h-4 w-4" /> Укажите столбец вручную или замените файл
+        </p>
+      </div>
+    ),
+  },
+  {
+    group: "Идёт обработка",
+    tone: "processing",
+    title: "Сбор семантики",
+    example: (
+      <div className="flex items-center gap-3 rounded-md border bg-accent px-3 py-2 text-sm">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <span className="text-foreground">Готовим Excel-файл…</span>
+      </div>
+    ),
+  },
+  {
+    group: "Результат сохранён",
+    tone: "success",
+    title: "Файл готов и сохранён в Библиотеке",
+    example: (
+      <div className="rounded-md border border-success/30 bg-success-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-success">
+          <CheckCircle2 className="h-4 w-4" /> Excel-файл готов
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button size="sm">
+            <Download className="h-3 w-3" /> Скачать Excel-файл
+          </Button>
+        </div>
+      </div>
+    ),
+  },
+  {
+    group: "Результат не сохранён",
+    tone: "warning",
+    title: "Файл готов, но не сохранён",
+    example: (
+      <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+        <p className="flex items-center gap-2 font-medium text-warning-foreground">
+          <AlertTriangle className="h-4 w-4" /> Скачайте сейчас или сохраните в Библиотеку
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button size="sm">
+            <Download className="h-3 w-3" /> Скачать Excel-файл
+          </Button>
+          <Button size="sm" variant="outline">Сохранить в Библиотеку</Button>
+        </div>
+      </div>
+    ),
+  },
+];
+
+
 function FlowStatesPage() {
   return (
     <AppShellV4>
@@ -641,6 +774,48 @@ function FlowStatesPage() {
         </p>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {campaignAnalysisExamples.map((s, i) => {
+            const tone = toneStyles[s.tone];
+            return (
+              <Card key={i} className="border bg-card shadow-none">
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {s.group}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
+                        {s.title}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-mono lowercase",
+                        tone.chip,
+                      )}
+                    >
+                      {tone.label}
+                    </span>
+                  </div>
+                  <div className="rounded-md border-t pt-3">{s.example}</div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Subsection: how the same tones look inside «Сбор и обработка семантики». */}
+      <section className="mt-10 border-t pt-6">
+        <h2 className="text-base font-semibold text-foreground">
+          Пример: Сбор и обработка семантики
+        </h2>
+        <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+          Те же общие тональности, применённые к процессу сбора и обработки
+          семантики. Тоны и компоненты не меняются.
+        </p>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {semanticsExamples.map((s, i) => {
             const tone = toneStyles[s.tone];
             return (
               <Card key={i} className="border bg-card shadow-none">

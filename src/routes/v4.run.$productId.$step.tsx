@@ -124,6 +124,7 @@ const semanticsScenarioGroupOf = (id?: string) =>
 const PROCESS_TITLES: Record<string, string> = {
   "dashboard-builder": "Подготовка дашборда",
   "campaign-analysis": "Анализ рекламных кампаний",
+  "semantics-generator": "Сбор и обработка семантики",
 };
 
 export const Route = createFileRoute("/v4/run/$productId/$step")({
@@ -177,7 +178,9 @@ function FlowRunnerPage() {
   }
 
   const project = projects.find((p) => p.productId === productId) ?? projects[0];
-  const navSearch = hasSecondSource ? { second: 1 } : {};
+  const navSearch: Record<string, unknown> = {};
+  if (hasSecondSource) navSearch.second = 1;
+  if (search.scenario) navSearch.scenario = search.scenario;
 
   return (
     <AppShellV4>
@@ -236,10 +239,7 @@ function titleFor(step: StepId, product: Product): string {
 }
 
 /** Process title displayed inside the runner — not the user-facing product name. */
-function processTitleFor(product: Product): string | undefined {
-  if (product.id === "dashboard-builder") return "Подготовка дашборда";
-  return undefined;
-}
+// (currently surfaced only via head meta in PROCESS_TITLES)
 
 function subtitleFor(step: StepId, product: Product): string | undefined {
   switch (step) {
@@ -1619,9 +1619,36 @@ function CheckStep({
 }) {
   const search = Route.useSearch() as RunnerSearch;
   const state: CheckState = search.state ?? "clean";
+  const scenario = search.scenario;
+  const isSemantics = product.id === "semantics-generator";
+  const group = semanticsScenarioGroupOf(scenario);
+  const isCluster = scenario === "cluster";
+  const isFileScenario = isSemantics && (isCluster || scenario === "expand");
   const idx = steps.indexOf("check");
   const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : undefined;
   const canRun = state !== "blocked";
+  const navSearch: Record<string, unknown> = scenario ? { scenario } : {};
+
+  // Semantics-specific copy
+  const semWarning =
+    "Файл прочитан, но в 124 строках обнаружены пустые значения и 38 повторов фраз — будут пропущены при обработке.";
+  const semBlocked = isCluster
+    ? "Не удалось определить столбец с фразами. Укажите его в параметрах или замените файл."
+    : "Файл не содержит ни одной валидной фразы. Замените источник.";
+  const reportWarning =
+    "В выгрузке есть 14 строк с пустой валютой и 3 нераспознанные колонки";
+  const reportBlocked = "Не хватает обязательных колонок: campaign_id, date";
+
+  const sourceLabel = isSemantics
+    ? isCluster
+      ? "phrases_to_cluster.csv"
+      : scenario === "expand"
+        ? "seed_keywords.txt"
+        : scenario === "topic-list"
+          ? "Тема списка: «спортивная обувь»"
+          : "Тема: «весенняя коллекция спортивной обуви»"
+    : "campaign_export.xlsx";
+
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
@@ -1630,7 +1657,9 @@ function CheckStep({
             {state === "clean" && (
               <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
                 <CheckCircle2 className="h-4 w-4" />
-                Источник принят, структура соответствует ожиданиям. Можно запускать.
+                {isSemantics
+                  ? "Источник принят, всё готово к запуску."
+                  : "Источник принят, структура соответствует ожиданиям. Можно запускать."}
               </div>
             )}
             {state === "warning" && (
@@ -1638,10 +1667,10 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
                 <div>
                   <p className="font-medium text-warning-foreground">
-                    В выгрузке есть 14 строк с пустой валютой и 3 нераспознанные колонки
+                    {isSemantics ? semWarning : reportWarning}
                   </p>
                   <p className="mt-0.5 text-xs text-warning-foreground/80">
-                    Можно продолжить — такие строки и колонки будут пропущены при анализе.
+                    Можно продолжить — такие строки и колонки будут пропущены при обработке.
                   </p>
                 </div>
               </div>
@@ -1651,13 +1680,28 @@ function CheckStep({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-medium">
-                    Не хватает обязательных колонок: campaign_id, date
+                    {isSemantics ? semBlocked : reportBlocked}
                   </p>
                   <p className="mt-0.5 text-xs">
-                    Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими
-                    колонками.
+                    {isSemantics
+                      ? "Запуск невозможен. Исправьте источник или параметры."
+                      : "Запуск невозможен. Вернитесь к источнику и загрузите выгрузку с этими колонками."}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {isSemantics && scenario && (
+              <div className="rounded-md border bg-surface px-3 py-2 text-xs">
+                <span className="text-muted-foreground">Сценарий: </span>
+                <span className="font-medium text-foreground">
+                  {semanticsScenarioName(scenario)}
+                </span>
+                {group && (
+                  <span className="ml-1.5 text-muted-foreground">
+                    · {semanticsScenarioGroupLabel[group]}
+                  </span>
+                )}
               </div>
             )}
 
@@ -1665,16 +1709,40 @@ function CheckStep({
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Источник
               </p>
-              <p className="mt-1 text-sm font-medium text-foreground">campaign_export.xlsx</p>
+              <p className="mt-1 text-sm font-medium text-foreground">{sourceLabel}</p>
               <dl className="mt-2 grid grid-cols-2 gap-y-1 text-xs">
-                <dt className="text-muted-foreground">Строк</dt>
-                <dd className="text-foreground">2 184</dd>
-                <dt className="text-muted-foreground">Колонок</dt>
-                <dd className="text-foreground">17</dd>
-                <dt className="text-muted-foreground">Период</dt>
-                <dd className="text-foreground">01.04.2026 — 24.04.2026</dd>
-                <dt className="text-muted-foreground">Кампаний</dt>
-                <dd className="text-foreground">18</dd>
+                {isSemantics ? (
+                  isFileScenario ? (
+                    <>
+                      <dt className="text-muted-foreground">Строк</dt>
+                      <dd className="text-foreground">4 320</dd>
+                      <dt className="text-muted-foreground">Колонок</dt>
+                      <dd className="text-foreground">{isCluster ? "1 (phrase)" : "1"}</dd>
+                      <dt className="text-muted-foreground">Уникальных фраз</dt>
+                      <dd className="text-foreground">4 282</dd>
+                      <dt className="text-muted-foreground">Размер</dt>
+                      <dd className="text-foreground">18 КБ</dd>
+                    </>
+                  ) : (
+                    <>
+                      <dt className="text-muted-foreground">Тип входа</dt>
+                      <dd className="text-foreground">Тема / список</dd>
+                      <dt className="text-muted-foreground">Сценарий</dt>
+                      <dd className="text-foreground">{semanticsScenarioName(scenario)}</dd>
+                    </>
+                  )
+                ) : (
+                  <>
+                    <dt className="text-muted-foreground">Строк</dt>
+                    <dd className="text-foreground">2 184</dd>
+                    <dt className="text-muted-foreground">Колонок</dt>
+                    <dd className="text-foreground">17</dd>
+                    <dt className="text-muted-foreground">Период</dt>
+                    <dd className="text-foreground">01.04.2026 — 24.04.2026</dd>
+                    <dt className="text-muted-foreground">Кампаний</dt>
+                    <dd className="text-foreground">18</dd>
+                  </>
+                )}
               </dl>
             </div>
 
@@ -1686,7 +1754,9 @@ function CheckStep({
                 <li>· Продукт: {product.name}</li>
                 <li>· Формат результата: {resultFormatLabel[product.resultFormat]}</li>
                 <li>· Куда сохранится: Библиотека</li>
-                <li>· Ожидаемое время обработки: ~2 мин</li>
+                <li>
+                  · Ожидаемое время обработки: {isSemantics ? "~3–5 мин" : "~2 мин"}
+                </li>
               </ul>
             </div>
 
@@ -1695,8 +1765,11 @@ function CheckStep({
                 <Link
                   to="/v4/run/$productId/$step"
                   params={{ productId: product.id, step: "source" }}
+                  search={navSearch}
                 >
-                  Изменить источник
+                  {state === "blocked" && isFileScenario
+                    ? "Заменить файл"
+                    : "Изменить источник"}
                 </Link>
               </Button>
               {product.steps.includes("params") && (
@@ -1704,8 +1777,9 @@ function CheckStep({
                   <Link
                     to="/v4/run/$productId/$step"
                     params={{ productId: product.id, step: "params" }}
+                    search={navSearch}
                   >
-                    Вернуться к параметрам
+                    Изменить параметры
                   </Link>
                 </Button>
               )}
@@ -1727,6 +1801,7 @@ function CheckStep({
           steps={steps}
           current="check"
           projectId={projectId}
+          search={navSearch}
           nextSlot={
             next &&
             (canRun ? (
@@ -1734,6 +1809,7 @@ function CheckStep({
                 <Link
                   to="/v4/run/$productId/$step"
                   params={{ productId: product.id, step: next }}
+                  search={navSearch}
                 >
                   Запустить <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
@@ -1761,6 +1837,9 @@ function RunStep({
   projectId: string;
   steps: StepId[];
 }) {
+  const search = Route.useSearch() as RunnerSearch;
+  const isSemantics = product.id === "semantics-generator";
+  const navSearch: Record<string, unknown> = search.scenario ? { scenario: search.scenario } : {};
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
@@ -1772,16 +1851,30 @@ function RunStep({
                 {product.name} — идёт обработка
               </p>
               <p className="text-xs text-muted-foreground">
-                Подготовка результата · ~2 мин
+                {isSemantics
+                  ? "Подготовка Excel-файла · ~3–5 мин"
+                  : "Подготовка результата · ~2 мин"}
               </p>
             </div>
           </div>
           <Progress value={62} className="h-1.5" />
           <ul className="space-y-1 text-xs text-muted-foreground">
-            <li>· Читаем источник</li>
-            <li>· Проверяем структуру</li>
-            <li className="text-foreground">· Формируем результат…</li>
-            <li>· Сохраняем в Библиотеке</li>
+            {isSemantics ? (
+              <>
+                <li>· Читаем источник</li>
+                <li>· Собираем фразы</li>
+                <li className="text-foreground">· Дедуплицируем и фильтруем…</li>
+                <li>· Формируем Excel</li>
+                <li>· Сохраняем в Библиотеке</li>
+              </>
+            ) : (
+              <>
+                <li>· Читаем источник</li>
+                <li>· Проверяем структуру</li>
+                <li className="text-foreground">· Формируем результат…</li>
+                <li>· Сохраняем в Библиотеке</li>
+              </>
+            )}
           </ul>
           <p className="rounded-md border bg-surface px-3 py-2 text-xs text-muted-foreground">
             Можно безопасно вернуться позже — результат появится в Библиотеке.
@@ -1802,11 +1895,13 @@ function RunStep({
           steps={steps}
           current="run"
           projectId={projectId}
+          search={navSearch}
           nextSlot={
             <Button asChild>
               <Link
                 to="/v4/run/$productId/$step"
                 params={{ productId: product.id, step: "result" }}
+                search={navSearch}
               >
                 Посмотреть результат (демо) <ArrowRight className="h-3.5 w-3.5" />
               </Link>
@@ -1822,6 +1917,11 @@ function RunStep({
 
 function ResultStep({ product, projectId, steps: _steps }: { product: Product; projectId: string; steps: StepId[] }) {
   const search = Route.useSearch() as RunnerSearch;
+  const isSemantics = product.id === "semantics-generator";
+  const scenario = search.scenario;
+  // For excel results: saved=0 means local copy only; save=error means saving failed.
+  const saved = search.saved !== 0;
+  const saveError = search.save === "error";
   const PrimaryIcon =
     product.resultFormat === "excel"
       ? Download
@@ -1841,10 +1941,34 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border bg-card shadow-none lg:col-span-2">
         <CardContent className="space-y-4 p-6">
-          <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
-            <CheckCircle2 className="h-4 w-4" />
-            Результат сохранён в Библиотеке.
-          </div>
+          {saveError ? (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-blocked-soft px-3 py-2 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="font-medium">Не удалось сохранить результат в Библиотеку</p>
+                <p className="mt-0.5 text-xs">
+                  Файл готов и его можно скачать. Сохранение в Библиотеку можно повторить.
+                </p>
+              </div>
+            </div>
+          ) : saved ? (
+            <div className="flex items-center gap-2 rounded-md border bg-success-soft px-3 py-2 text-sm text-success">
+              <CheckCircle2 className="h-4 w-4" />
+              Результат сохранён в Библиотеке.
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
+              <div>
+                <p className="font-medium text-warning-foreground">
+                  Файл готов, но не сохранён в Библиотеку
+                </p>
+                <p className="mt-0.5 text-xs text-warning-foreground/80">
+                  Скачайте его сейчас или сохраните в Библиотеку, чтобы вернуться позже.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="rounded-md border bg-surface px-4 py-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -1855,6 +1979,7 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               Формат: {resultFormatLabel[product.resultFormat]}
+              {isSemantics && scenario && ` · Сценарий: ${semanticsScenarioName(scenario)}`}
             </p>
           </div>
 
@@ -1865,6 +1990,16 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
             {showDashboardCta && (
               <Button variant="outline">
                 <ExternalLink className="h-3.5 w-3.5" /> Открыть дашборд
+              </Button>
+            )}
+            {product.resultFormat === "excel" && saveError && (
+              <Button variant="outline">
+                <ArrowRight className="h-3.5 w-3.5" /> Повторить сохранение
+              </Button>
+            )}
+            {product.resultFormat === "excel" && !saved && !saveError && (
+              <Button variant="outline">
+                <Database className="h-3.5 w-3.5" /> Сохранить в Библиотеку
               </Button>
             )}
             <Button variant="outline" asChild>
@@ -1883,7 +2018,9 @@ function ResultStep({ product, projectId, steps: _steps }: { product: Product; p
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             Где сохранён
           </p>
-          <p className="mt-1 text-sm text-foreground">Библиотека</p>
+          <p className="mt-1 text-sm text-foreground">
+            {saveError ? "Сохранение не удалось" : saved ? "Библиотека" : "Локально (не сохранён)"}
+          </p>
           <p className="mt-3 text-xs text-muted-foreground">
             Все источники и результаты проекта собраны в Библиотеке.
           </p>

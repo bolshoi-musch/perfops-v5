@@ -51,6 +51,7 @@ import { Route as ToolsToolIdProcessingRouteImport } from './routes/tools.$toolI
 import { Route as ToolsToolIdDegradedRouteImport } from './routes/tools.$toolId.degraded'
 import { Route as ToolsToolIdBlockedRouteImport } from './routes/tools.$toolId.blocked'
 import { Route as ToolsToolIdAboutRouteImport } from './routes/tools.$toolId.about'
+import { Route as V4RunSemanticsGeneratorRecoveryRouteImport } from './routes/v4.run.semantics-generator.recovery'
 import { Route as V4RunDashboardBuilderRecoveryRouteImport } from './routes/v4.run.dashboard-builder.recovery'
 import { Route as V4RunCampaignAnalysisRecoveryRouteImport } from './routes/v4.run.campaign-analysis.recovery'
 import { Route as V4RunProductIdStepRouteImport } from './routes/v4.run.$productId.$step'
@@ -269,6 +270,12 @@ const ToolsToolIdAboutRoute = ToolsToolIdAboutRouteImport.update({
   path: '/about',
   getParentRoute: () => ToolsToolIdRoute,
 } as any)
+const V4RunSemanticsGeneratorRecoveryRoute =
+  V4RunSemanticsGeneratorRecoveryRouteImport.update({
+    id: '/v4/run/semantics-generator/recovery',
+    path: '/v4/run/semantics-generator/recovery',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const V4RunDashboardBuilderRecoveryRoute =
   V4RunDashboardBuilderRecoveryRouteImport.update({
     id: '/v4/run/dashboard-builder/recovery',
@@ -358,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
   '/v4/run/campaign-analysis/recovery': typeof V4RunCampaignAnalysisRecoveryRoute
   '/v4/run/dashboard-builder/recovery': typeof V4RunDashboardBuilderRecoveryRoute
+  '/v4/run/semantics-generator/recovery': typeof V4RunSemanticsGeneratorRecoveryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -409,6 +417,7 @@ export interface FileRoutesByTo {
   '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
   '/v4/run/campaign-analysis/recovery': typeof V4RunCampaignAnalysisRecoveryRoute
   '/v4/run/dashboard-builder/recovery': typeof V4RunDashboardBuilderRecoveryRoute
+  '/v4/run/semantics-generator/recovery': typeof V4RunSemanticsGeneratorRecoveryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -461,6 +470,7 @@ export interface FileRoutesById {
   '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
   '/v4/run/campaign-analysis/recovery': typeof V4RunCampaignAnalysisRecoveryRoute
   '/v4/run/dashboard-builder/recovery': typeof V4RunDashboardBuilderRecoveryRoute
+  '/v4/run/semantics-generator/recovery': typeof V4RunSemanticsGeneratorRecoveryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -514,6 +524,7 @@ export interface FileRouteTypes {
     | '/v4/run/$productId/$step'
     | '/v4/run/campaign-analysis/recovery'
     | '/v4/run/dashboard-builder/recovery'
+    | '/v4/run/semantics-generator/recovery'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -565,6 +576,7 @@ export interface FileRouteTypes {
     | '/v4/run/$productId/$step'
     | '/v4/run/campaign-analysis/recovery'
     | '/v4/run/dashboard-builder/recovery'
+    | '/v4/run/semantics-generator/recovery'
   id:
     | '__root__'
     | '/'
@@ -616,6 +628,7 @@ export interface FileRouteTypes {
     | '/v4/run/$productId/$step'
     | '/v4/run/campaign-analysis/recovery'
     | '/v4/run/dashboard-builder/recovery'
+    | '/v4/run/semantics-generator/recovery'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -656,6 +669,7 @@ export interface RootRouteChildren {
   V4RunProductIdStepRoute: typeof V4RunProductIdStepRoute
   V4RunCampaignAnalysisRecoveryRoute: typeof V4RunCampaignAnalysisRecoveryRoute
   V4RunDashboardBuilderRecoveryRoute: typeof V4RunDashboardBuilderRecoveryRoute
+  V4RunSemanticsGeneratorRecoveryRoute: typeof V4RunSemanticsGeneratorRecoveryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -954,6 +968,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ToolsToolIdAboutRouteImport
       parentRoute: typeof ToolsToolIdRoute
     }
+    '/v4/run/semantics-generator/recovery': {
+      id: '/v4/run/semantics-generator/recovery'
+      path: '/v4/run/semantics-generator/recovery'
+      fullPath: '/v4/run/semantics-generator/recovery'
+      preLoaderRoute: typeof V4RunSemanticsGeneratorRecoveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v4/run/dashboard-builder/recovery': {
       id: '/v4/run/dashboard-builder/recovery'
       path: '/v4/run/dashboard-builder/recovery'
@@ -1106,6 +1127,7 @@ const rootRouteChildren: RootRouteChildren = {
   V4RunProductIdStepRoute: V4RunProductIdStepRoute,
   V4RunCampaignAnalysisRecoveryRoute: V4RunCampaignAnalysisRecoveryRoute,
   V4RunDashboardBuilderRecoveryRoute: V4RunDashboardBuilderRecoveryRoute,
+  V4RunSemanticsGeneratorRecoveryRoute: V4RunSemanticsGeneratorRecoveryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
