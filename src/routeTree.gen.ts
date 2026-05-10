@@ -52,6 +52,7 @@ import { Route as ToolsToolIdDegradedRouteImport } from './routes/tools.$toolId.
 import { Route as ToolsToolIdBlockedRouteImport } from './routes/tools.$toolId.blocked'
 import { Route as ToolsToolIdAboutRouteImport } from './routes/tools.$toolId.about'
 import { Route as V4RunDashboardBuilderRecoveryRouteImport } from './routes/v4.run.dashboard-builder.recovery'
+import { Route as V4RunCampaignAnalysisRecoveryRouteImport } from './routes/v4.run.campaign-analysis.recovery'
 import { Route as V4RunProductIdStepRouteImport } from './routes/v4.run.$productId.$step'
 import { Route as V3ToolsProductIdSourceRouteImport } from './routes/v3.tools.$productId.source'
 import { Route as V3ToolsProductIdReviewRouteImport } from './routes/v3.tools.$productId.review'
@@ -274,6 +275,12 @@ const V4RunDashboardBuilderRecoveryRoute =
     path: '/v4/run/dashboard-builder/recovery',
     getParentRoute: () => rootRouteImport,
   } as any)
+const V4RunCampaignAnalysisRecoveryRoute =
+  V4RunCampaignAnalysisRecoveryRouteImport.update({
+    id: '/v4/run/campaign-analysis/recovery',
+    path: '/v4/run/campaign-analysis/recovery',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const V4RunProductIdStepRoute = V4RunProductIdStepRouteImport.update({
   id: '/v4/run/$productId/$step',
   path: '/v4/run/$productId/$step',
@@ -349,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/v3/tools/$productId/review': typeof V3ToolsProductIdReviewRoute
   '/v3/tools/$productId/source': typeof V3ToolsProductIdSourceRoute
   '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
+  '/v4/run/campaign-analysis/recovery': typeof V4RunCampaignAnalysisRecoveryRoute
   '/v4/run/dashboard-builder/recovery': typeof V4RunDashboardBuilderRecoveryRoute
 }
 export interface FileRoutesByTo {
@@ -399,6 +407,7 @@ export interface FileRoutesByTo {
   '/v3/tools/$productId/review': typeof V3ToolsProductIdReviewRoute
   '/v3/tools/$productId/source': typeof V3ToolsProductIdSourceRoute
   '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
+  '/v4/run/campaign-analysis/recovery': typeof V4RunCampaignAnalysisRecoveryRoute
   '/v4/run/dashboard-builder/recovery': typeof V4RunDashboardBuilderRecoveryRoute
 }
 export interface FileRoutesById {
@@ -450,6 +459,7 @@ export interface FileRoutesById {
   '/v3/tools/$productId/review': typeof V3ToolsProductIdReviewRoute
   '/v3/tools/$productId/source': typeof V3ToolsProductIdSourceRoute
   '/v4/run/$productId/$step': typeof V4RunProductIdStepRoute
+  '/v4/run/campaign-analysis/recovery': typeof V4RunCampaignAnalysisRecoveryRoute
   '/v4/run/dashboard-builder/recovery': typeof V4RunDashboardBuilderRecoveryRoute
 }
 export interface FileRouteTypes {
@@ -502,6 +512,7 @@ export interface FileRouteTypes {
     | '/v3/tools/$productId/review'
     | '/v3/tools/$productId/source'
     | '/v4/run/$productId/$step'
+    | '/v4/run/campaign-analysis/recovery'
     | '/v4/run/dashboard-builder/recovery'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -552,6 +563,7 @@ export interface FileRouteTypes {
     | '/v3/tools/$productId/review'
     | '/v3/tools/$productId/source'
     | '/v4/run/$productId/$step'
+    | '/v4/run/campaign-analysis/recovery'
     | '/v4/run/dashboard-builder/recovery'
   id:
     | '__root__'
@@ -602,6 +614,7 @@ export interface FileRouteTypes {
     | '/v3/tools/$productId/review'
     | '/v3/tools/$productId/source'
     | '/v4/run/$productId/$step'
+    | '/v4/run/campaign-analysis/recovery'
     | '/v4/run/dashboard-builder/recovery'
   fileRoutesById: FileRoutesById
 }
@@ -641,6 +654,7 @@ export interface RootRouteChildren {
   V3ToolsProductIdReviewRoute: typeof V3ToolsProductIdReviewRoute
   V3ToolsProductIdSourceRoute: typeof V3ToolsProductIdSourceRoute
   V4RunProductIdStepRoute: typeof V4RunProductIdStepRoute
+  V4RunCampaignAnalysisRecoveryRoute: typeof V4RunCampaignAnalysisRecoveryRoute
   V4RunDashboardBuilderRecoveryRoute: typeof V4RunDashboardBuilderRecoveryRoute
 }
 
@@ -947,6 +961,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V4RunDashboardBuilderRecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v4/run/campaign-analysis/recovery': {
+      id: '/v4/run/campaign-analysis/recovery'
+      path: '/v4/run/campaign-analysis/recovery'
+      fullPath: '/v4/run/campaign-analysis/recovery'
+      preLoaderRoute: typeof V4RunCampaignAnalysisRecoveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v4/run/$productId/$step': {
       id: '/v4/run/$productId/$step'
       path: '/v4/run/$productId/$step'
@@ -1083,6 +1104,7 @@ const rootRouteChildren: RootRouteChildren = {
   V3ToolsProductIdReviewRoute: V3ToolsProductIdReviewRoute,
   V3ToolsProductIdSourceRoute: V3ToolsProductIdSourceRoute,
   V4RunProductIdStepRoute: V4RunProductIdStepRoute,
+  V4RunCampaignAnalysisRecoveryRoute: V4RunCampaignAnalysisRecoveryRoute,
   V4RunDashboardBuilderRecoveryRoute: V4RunDashboardBuilderRecoveryRoute,
 }
 export const routeTree = rootRouteImport
