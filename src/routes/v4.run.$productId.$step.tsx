@@ -1268,6 +1268,9 @@ function ParamsStep({
   if (product.id === "semantics-generator") {
     return <SemanticsParamsStep product={product} projectId={projectId} steps={steps} />;
   }
+  if (product.id === "bd-optimization") {
+    return <BdOptimizationParamsStep product={product} projectId={projectId} steps={steps} />;
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
